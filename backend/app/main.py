@@ -10,6 +10,7 @@ from app.api.routes import router
 from app.core.config import load_settings
 from app.core.worker import Worker
 from app.db.store import Store
+from app.evidence.signing import Signer
 from app.evidence.store import EvidenceStore
 
 
@@ -19,7 +20,8 @@ async def lifespan(app: FastAPI):
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     app.state.settings = settings
     app.state.store = Store(settings.data_dir / "app.sqlite3")
-    app.state.evidence = EvidenceStore(settings.data_dir / "evidence")
+    app.state.signer = Signer(settings.data_dir / "signing.key")
+    app.state.evidence = EvidenceStore(settings.data_dir / "evidence", app.state.signer)
     app.state.worker = Worker(settings, app.state.store, app.state.evidence)
     app.state.worker.recover_unfinished()
     yield

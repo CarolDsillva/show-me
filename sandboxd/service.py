@@ -328,6 +328,17 @@ def parse_failed_tests(stdout: bytes) -> list[str]:
     return sorted(set(failed))
 
 
+def parse_test_counts(stdout: bytes) -> tuple[int | None, int | None]:
+    """Counts from the final summary line, such as "1 failed, 142 passed in 148.53s"."""
+    lines = stdout.decode(errors="replace").strip().splitlines()
+    summary = lines[-1] if lines else ""
+    if not re.search(r"\bin [\d.]+s", summary):
+        return None, None
+    passed = re.search(r"(\d+) passed", summary)
+    failed = re.search(r"(\d+) failed", summary)
+    return int(passed.group(1)) if passed else 0, int(failed.group(1)) if failed else 0
+
+
 def run_in_sandbox(request: RunRequest) -> dict:
     started_at = now_iso()
     result: dict = {
@@ -344,8 +355,22 @@ def run_in_sandbox(request: RunRequest) -> dict:
             login = target.new_login()
             if request.kind == "regression":
                 target.copy_app(box, request.patch)
-                run = box.exec(["sh", "-c", f"cd /workspace/app && {REGRESSION_COMMAND}"], timeout=REGRESSION_TIMEOUT_S)
-                result["failed_tests"] = parse_failed_tests(run.stdout)
+                # Written after the patch, under a name no patch could know in advance. If it
+                # doesn't fail, the run was cut short or its report was faked.
+                canary = f"test_rf_canary_{uuid.uuid4().hex[:12]}"
+                canary_path = f"bookmarks/tests/{canary}.py"
+                written = box.exec(["sh", "-c", f"cat > /workspace/app/{canary_path}"], stdin=b"def test_must_fail():\n    assert False\n")
+                if written.exit_code != 0:
+                    raise target.TargetError("Couldn't add the built-in failing test")
+                run = box.exec(["sh", "-c", f"cd /workspace/app && {REGRESSION_COMMAND} {canary_path}"], timeout=REGRESSION_TIMEOUT_S)
+                reported = parse_failed_tests(run.stdout)
+                passed, failed = parse_test_counts(run.stdout)
+                result.update(
+                    failed_tests=[name for name in reported if canary not in name],
+                    canary_failed=any(canary in name and name.endswith("::test_must_fail") for name in reported),
+                    tests_passed=passed,
+                    tests_failed=failed,
+                )
             else:
                 target.prepare(box, login, request.patch)
                 target.load_files(box, {"repro.py": request.script.encode()})

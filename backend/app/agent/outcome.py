@@ -65,9 +65,14 @@ def decide_fix(
             return Decision("FIX_REJECTED", f"The regression run ended as {run.get('termination')}, exit {run.get('exit_code')}")
     if regression_patched.get("applied_patch_sha256") != patch_sha256:
         return Decision("FAILED", "The regression run didn't use this patch")
+    for run in (regression_patched, regression_baseline):
+        if run.get("canary_failed") is not True or run.get("exit_code") != 1:
+            return Decision("FIX_REJECTED", "The built-in failing test didn't fail, so this regression result can't be trusted")
+    baseline_total = (regression_baseline.get("tests_passed") or 0) + (regression_baseline.get("tests_failed") or 0)
+    patched_total = (regression_patched.get("tests_passed") or 0) + (regression_patched.get("tests_failed") or 0)
+    if not baseline_total or patched_total != baseline_total:
+        return Decision("FIX_REJECTED", f"The patched run reported {patched_total} tests, and the current code reported {baseline_total}")
     new_failures = sorted(set(regression_patched.get("failed_tests") or []) - set(regression_baseline.get("failed_tests") or []))
     if new_failures:
         return Decision("FIX_REJECTED", f"{len(new_failures)} tests now fail: {', '.join(new_failures[:5])}")
-    if regression_patched.get("exit_code") == 1 and not regression_patched.get("failed_tests"):
-        return Decision("FIX_REJECTED", "The regression run failed without naming a test")
     return Decision("FIX_VERIFIED", f"The frozen script passed {required} of {required} fresh replays on the patched code, with no new test failures")

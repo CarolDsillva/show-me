@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Show Me API
-  version: 0.2.0
+  version: 0.3.0
   description: >
     Public API behind Caddy. All ticket, page, diff and output text it returns is untrusted,
     and clients must render it as plain text.
@@ -121,6 +121,20 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Task" }
         "429": { description: Rate limit or queue full }
+  /api/signing-key:
+    get:
+      summary: The public key that signs evidence manifests
+      responses:
+        "200":
+          description: Key
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [algorithm, public_key]
+                properties:
+                  algorithm: { type: string, enum: [Ed25519] }
+                  public_key: { type: string }
   /api/health/host:
     get:
       summary: Host health panel values

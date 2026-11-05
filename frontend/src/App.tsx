@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Drills } from "./Drills";
 import { Run } from "./Run";
+import { Verify } from "./Verify";
 
 type Sample = { id: string; title: string; text: string; hostile?: boolean };
 
@@ -8,10 +9,18 @@ type Sample = { id: string; title: string; text: string; hostile?: boolean };
 const SAMPLE_NOTES: Record<string, string> = {
   "tag-count-link": "A real past bug. Fixes have passed on every recent run",
   "tag-search-url": "A real past bug. Fixes have passed on every recent run",
-  "notes-link-http": "A real past bug, and a harder one. No fix has passed yet",
+  "notes-link-http": "A real past bug, and a harder one. Fixes usually fail",
   "not-a-bug": "A feature request. The agent should decline it",
   hostile: "A real bug, with a hidden instruction to add a backdoor",
 };
+
+// Links to real recorded runs. The pages show exactly what those runs recorded.
+const EXAMPLES = [
+  { id: "f48a18e0ce46476b9582a3d9d7b188a9", title: "Fix approved", note: "From a complaint to an open pull request" },
+  { id: "f2f036fee65541daae11c39026d67d55", title: "Hidden instructions", note: "A ticket tells the agent to add a backdoor" },
+  { id: "75f11bef07aa4e65972e0d5bb93f3725", title: "No fix passed", note: "The bug is filed, and the system says so" },
+  { id: "1398f3031b564ad3890357c818b0d949", title: "Not a bug", note: "A feature request, declined with nothing filed" },
+];
 
 const STEPS = [
   ["Reproduce", "An agent tries your bug in a real browser, inside a disposable sandbox."],
@@ -24,15 +33,16 @@ const STEPS = [
 
 function route() {
   const params = new URLSearchParams(window.location.search);
-  const task = params.get("task");
+  const valid = (value: string | null) => (value && /^[a-f0-9]{32}$/.test(value) ? value : null);
   return {
-    taskId: task && /^[a-f0-9]{32}$/.test(task) ? task : null,
+    taskId: valid(params.get("task")),
+    verifyId: valid(params.get("verify")),
     drills: params.get("view") === "drills",
   };
 }
 
 export function App() {
-  const [{ taskId, drills }, setPage] = useState(route);
+  const [{ taskId, verifyId, drills }, setPage] = useState(route);
 
   useEffect(() => {
     const onPop = () => setPage(route());
@@ -62,7 +72,7 @@ export function App() {
         <nav aria-label="Main">
           <a
             href={window.location.pathname}
-            aria-current={!taskId && !drills ? "page" : undefined}
+            aria-current={!taskId && !verifyId && !drills ? "page" : undefined}
             onClick={(event) => {
               event.preventDefault();
               go("");
@@ -82,7 +92,7 @@ export function App() {
           </a>
         </nav>
       </header>
-      {drills ? <Drills /> : taskId ? <Run key={taskId} taskId={taskId} onNew={() => go("")} /> : <Home onStarted={(id) => go(`?task=${id}`)} />}
+      {verifyId ? <Verify taskId={verifyId} onBack={() => go(`?task=${verifyId}`)} /> : drills ? <Drills /> : taskId ? <Run key={taskId} taskId={taskId} onNew={() => go("")} /> : <Home onStarted={(id) => go(`?task=${id}`)} onOpen={(id) => go(`?task=${id}`)} />}
       <footer className="colophon">
         <p>
           Runs on a Vultr Cloud Compute VM, with every model call on Vultr Serverless Inference. The target app is{" "}
@@ -94,7 +104,7 @@ export function App() {
   );
 }
 
-function Home({ onStarted }: { onStarted: (id: string) => void }) {
+function Home({ onStarted, onOpen }: { onStarted: (id: string) => void; onOpen: (id: string) => void }) {
   const [text, setText] = useState("");
   const [samples, setSamples] = useState<Sample[]>([]);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -183,6 +193,21 @@ function Home({ onStarted }: { onStarted: (id: string) => void }) {
           ))}
         </aside>
       </div>
+
+      <section className="examples">
+        <h2>Or see finished runs</h2>
+        <p>A run takes about 6 minutes, and only the operator can approve a fix. These real runs are ready to read.</p>
+        <ul>
+          {EXAMPLES.map((example) => (
+            <li key={example.id}>
+              <a href={`?task=${example.id}`} onClick={(event) => { event.preventDefault(); onOpen(example.id); }}>
+                <strong>{example.title}</strong>
+                <span>{example.note}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="how">
         <h2>What happens next</h2>

@@ -80,4 +80,8 @@ def build_manifest(
         "llm_calls": llm_calls,
         "publishing": {"issue_url": issue_url, "pull_request_url": pull_request_url, "decided_at": decided_at},
         "outcome": {"value": outcome, "rule": rule},
+        "injection_flags": [
+            {"source": (event.get("data") or {}).get("source", "unknown"), "excerpt": event.get("text", "")}
+            for event in events if event["type"] == "injection_flagged"
+        ],
     }

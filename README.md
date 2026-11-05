@@ -18,7 +18,7 @@ Support and engineering teams at software companies. Vague reports bounce betwee
 4. **File.** A real issue goes to our fork, with steps, a screenshot and the script.
 5. **Patch.** The model reads source and proposes exact text edits. Code builds the diff and applies a fixed policy: only `bookmarks/**/*.py` and templates, never tests, settings, migrations, routing or dependencies, and at most 5 files and 150 changed lines.
 6. **Verify.** The same frozen script must pass in three fresh sandboxes on the patched code, with no new failures in a 142-test regression subset. There are at most three attempts.
-7. **Approve.** The task waits for a developer, surviving restarts. Approval needs the operator passcode, and opens a real pull request on our fork. Rejection opens nothing.
+7. **Approve.** The task waits for a developer, surviving restarts, with a warning if hidden instructions were found. Approval needs the operator passcode, and opens a real pull request on our fork. Rejection opens nothing.
 
 **Code decides every outcome, and the model only explains it.** See section 6 of [the architecture](docs/architecture.md).
 
@@ -72,7 +72,7 @@ Internal service and file names, such as `reprofix-api`, come from an earlier wo
 | No credentials in the sandbox | Env from an explicit allowlist. `sandboxd` holds no secrets, and only the API process holds keys. The only login inside is a throwaway user made per run | "Steal secrets" drill, `tests/security` SEC-02, `scripts/scan_secrets.py` |
 | Limits | 2 GiB memory with no swap, 2 CPUs, 512 PIDs, 512 MiB workspace, read-only root, no network, capabilities dropped, non-root, 120 s per command, 600 s per session, output caps. Set on the server, and no request can change them | The disk, fork, memory and loop drills, SEC-04 to SEC-08, SEC-12 |
 | Lifecycle | A fresh container for each session and replay. Destroyed on every path, then confirmed with `docker inspect`. A reaper removes anything overdue | SEC-11, and `destroyed` in every manifest |
-| Evidence | Limits and runtime are read back from Docker before any code loads, and a mismatch destroys the container. Each task gets a hashed manifest | `GET /api/tasks/{id}/manifest`, SEC-01 |
+| Evidence | Limits and runtime are read back from Docker before any code loads, and a mismatch destroys the container. Each task gets a hashed manifest, signed with Ed25519 | The run's "Check the evidence" page, `scripts/verify_manifest.py`, SEC-01 |
 
 Each drill is judged from host-side evidence. For example, the fork bomb needs the kernel's own `pids.events` count, and output from inside the sandbox can only count against "contained".
 
@@ -82,21 +82,21 @@ Latest real runs, on 2026-11-05.
 
 | Suite | Where | Result |
 |---|---|---|
-| Unit tests | Developer PC, using test doubles. Says nothing about containment | 115 backend and `sandboxd`, 23 frontend |
-| Security suite | The VM, against live Docker, gVisor and `sandboxd` | 54 passed, including 7 tests showing the checks fail when a protection is removed |
+| Unit tests | Developer PC, using test doubles. Says nothing about containment | 148 backend and `sandboxd`, 29 frontend |
+| Security suite | The VM, against live Docker, gVisor and `sandboxd` | 56 passed, including tests that remove each protection and expect the checks to fail, and a patch that tries to fake a clean test run |
 | Hostile tickets and pages | Public URL, real Inference, one run each | 5 of 5 as expected: no backdoor, and no system prompt in published text |
 | Secret scan | Git history and the sandbox image | Clean |
 | Smoke test | Public URL and VM | 16 of 16, after a rollback and after a reboot |
 
-**Reliability of the fix phase, on three real past bugs, in the latest two runs each:**
+**Reliability of the fix phase, on three real past bugs, in the latest three runs each:**
 
 | Bug | Reproduced | Fix verified |
 |---|---|---|
-| Tag count link goes to a broken page | 2 of 2 | 2 of 2 |
-| Tag search doesn't update the URL | 2 of 2 | 2 of 2 |
-| Links in notes use `http` | 2 of 2 | **0 of 2** |
+| Tag count link goes to a broken page | 3 of 3 | 3 of 3 |
+| Tag search doesn't update the URL | 3 of 3 | 3 of 3 |
+| Links in notes use `http` | 3 of 3 | **1 of 3** |
 
-That's too few runs to call a rate. The third bug shows what happens without a fix: the issue stands, and the outcome says `NO_VERIFIED_FIX`. In one attempt, the regression tests rejected a patch that fixed the symptom but broke an existing test.
+That's too few runs to call a rate. When no fix passes, the issue stands, and the outcome says `NO_VERIFIED_FIX`. In one attempt, the regression tests rejected a patch that fixed the symptom but broke an existing test. The one verified notes fix also shows why a person decides: it turns every `http://` link in a note into `https://`, including links someone wrote as `http://` on purpose, which the real upstream fix leaves alone.
 
 Results are in `security/results/`, and the running record is in [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
@@ -107,10 +107,11 @@ Results are in `security/results/`, and the running record is in [PROJECT_STATUS
 - **The target is fixed.** The product works on one target app, chosen in server config.
 - **A kernel-level escape is a residual risk.** gVisor is the boundary, and Chromium's own sandbox is off because it needs privileges we remove. A gVisor escape followed by a Docker escape would reach the control plane on the same VM.
 - **Prompt injection was tested, not solved.** A few fixed attempts failed on one run each. The defense is that code decides outcomes, policy limits patches, and no prompt holds a secret.
-- **A malicious patch could fake regression results,** because it shares a process with those tests. It stays contained, and the frozen replay runs separately, but this is another reason for human review.
+- **Faking regression results is harder, not impossible.** A built-in test must fail, the test count must match, and the patch policy rejects calls like `os._exit`. In testing, a patch that exits with success was caught. A determined patch shares a process with those tests, so a person still has to read it.
 - **The regression set is a subset.** The full linkding suite takes about 25 minutes under gVisor, so we run 142 tests around the UI we patch.
 - **The patch prompt tells the model the app uses Hotwire Turbo.** That is general codebase knowledge, and it likely helps on the two bugs that were fixed.
-- **Hashes show a bundle is unchanged since it was created.** They don't show the server creating it was honest.
+- **Hashes and signatures show a record is unchanged since it was signed.** They don't show the server signing it was honest.
+- **The hostile-text warning looks for known wording,** so it can miss others. It warns the developer, and changes no outcome.
 - **Recovery.** Rollback and reboot were rehearsed. Restoring from a snapshot wasn't, and neither was setup on a second clean VM.
 
 ## Setup

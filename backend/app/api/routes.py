@@ -164,6 +164,12 @@ def start_drill(body: DrillRequest, request: Request) -> dict:
     return task_view(state.store.get_task(task_id))
 
 
+@router.get("/signing-key")
+def signing_key(request: Request) -> dict:
+    signer = request.app.state.signer
+    return {"algorithm": "Ed25519", "public_key": signer.public_key}
+
+
 @router.get("/health")
 def health(request: Request) -> dict:
     settings = request.app.state.settings

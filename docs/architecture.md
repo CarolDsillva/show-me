@@ -127,8 +127,9 @@ Live production changes, deploying patches, private repositories, user accounts,
 - A passing replay proves that this symptom is gone. It doesn't prove the patch is good, which is why a developer approves it.
 - Demo bugs are real historic bugs, recreated by reverting their fixes on our fork. We say so.
 - Chromium's own sandbox is off, and gVisor is the boundary.
-- Hashes prove an evidence bundle is intact after creation, not that the server creating it was honest.
-- A patch runs in the same process as the regression tests, so a malicious patch could fake their result. It stays contained, and the frozen replay runs separately, but this is another reason a developer must read the diff.
+- Hashes and Ed25519 signatures show an evidence bundle is intact after signing, not that the server signing it was honest.
+- The warning about hidden instructions looks for known wording. It changes no outcome, and can miss others.
+- A patch runs in the same process as the regression tests. A built-in failing test, a matching test count and a list of banned calls make faking their result harder, but not impossible, which is another reason a developer must read the diff.
 - The patch prompt tells the model the app uses Hotwire Turbo. That is general codebase knowledge, and it likely helps on the two demo bugs that were fixed.
 - The regression set is a subset, not the full suite.
 
@@ -195,6 +196,7 @@ Computed by code. The model can't change them.
 - Never migrations, settings, management commands, URL routing, test files, CI, dependency files or lockfiles.
 - At most 5 files and 150 changed lines.
 - Each edit's old text must occur exactly once at the pinned commit.
+- Added lines can't use calls a web fix has no need for, such as `os._exit`, `subprocess` or `eval`.
 
 Failing any rule gives `FIX_REJECTED`, and the reason is shown.
 

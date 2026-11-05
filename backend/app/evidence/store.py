@@ -25,8 +25,9 @@ def seal(manifest: dict) -> dict:
 
 
 class EvidenceStore:
-    def __init__(self, root: pathlib.Path) -> None:
+    def __init__(self, root: pathlib.Path, signer=None) -> None:
         self.root = root
+        self.signer = signer
 
     def _task_dir(self, task_id: str) -> pathlib.Path:
         if not re.fullmatch(r"[a-f0-9]{32}", task_id):
@@ -50,6 +51,8 @@ class EvidenceStore:
 
     def write_manifest(self, task_id: str, manifest: dict) -> dict:
         sealed = seal(manifest)
+        if self.signer:
+            sealed = {**sealed, "signature": self.signer.sign(canonical(sealed))}
         (self._task_dir(task_id) / "manifest.json").write_bytes(canonical(sealed))
         return sealed
 

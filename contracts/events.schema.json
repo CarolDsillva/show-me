@@ -29,6 +29,7 @@
         "pull_request_opened",
         "llm_call",
         "outcome",
+        "injection_flagged",
         "error"
       ]
     },

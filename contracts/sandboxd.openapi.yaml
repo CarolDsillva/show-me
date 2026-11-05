@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: sandboxd
-  version: 0.2.0
+  version: 0.3.0
   description: >
     Internal API on a Unix socket, reachable only by the rfsock group. Callers name a
     profile. They can't set limits, images, mounts or env. Unknown fields are rejected.
@@ -149,7 +149,10 @@ components:
         stderr: { type: string, description: Untrusted and capped. The caller stores it as an opaque blob }
         applied_patch_sha256: { type: [string, "null"] }
         patch_failed: { type: boolean, description: The patch didn't apply inside the sandbox }
-        failed_tests: { type: array, items: { type: string }, description: For regression runs. Filtered and capped }
+        failed_tests: { type: array, items: { type: string }, description: For regression runs. Filtered and capped. Leaves out the built-in failing test }
+        canary_failed: { type: boolean, description: For regression runs. The built-in test that must fail did fail }
+        tests_passed: { type: [integer, "null"], description: For regression runs. From the final summary line }
+        tests_failed: { type: [integer, "null"], description: For regression runs. Includes the built-in failing test }
         contained: { type: boolean, description: For drills. True only if every host-side check passed }
         checks:
           type: array

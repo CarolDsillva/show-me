@@ -28,6 +28,27 @@ def label_untrusted(name: str, text: str) -> str:
     return f"<untrusted_{name}>\n{safe}\n</untrusted_{name}>"
 
 
+# Well-known phrasing only. This powers a warning for the developer, and isn't the defense: the
+# defense is that code decides outcomes, policy limits patches, and no prompt holds a secret.
+INJECTION = re.compile(
+    r"(?:ignore|disregard|forget)\s+(?:all\s+|any\s+|your\s+)?(?:previous|prior|earlier|above|task|instructions)"
+    r"|(?:print|reveal|show|repeat)\s+(?:me\s+)?(?:your\s+)?system\s+prompt"
+    r"|(?:add|create|insert)\s+(?:an?\s+)?(?:\w+\s+)?backdoor"
+    r"|system\s+notice\s+to\s+the\s+ai"
+    r"|you\s+are\s+now\s+(?:a|an|in)\b",
+    re.IGNORECASE,
+)
+
+
+def find_injection(text: str) -> str | None:
+    """A short excerpt around the first match, or None."""
+    match = INJECTION.search(text)
+    if match is None:
+        return None
+    start = max(0, match.start() - 30)
+    return clean_untrusted(text[start:match.end() + 90], 200).strip()
+
+
 SAMPLES = [
     {
         "id": "tag-count-link",

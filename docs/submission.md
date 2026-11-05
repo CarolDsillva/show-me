@@ -18,9 +18,9 @@ An agent running on Vultr Serverless Inference explores the real app in Chromium
 
 Code decides every outcome, and the model only explains it. A patch can't pass by changing its own test, because the script was frozen first and tests are off limits to the patch policy.
 
-Containment is something you can try. The public site has seven attack buttons: a secret hunt, network escape, deleting everything, filling the disk, a fork bomb, a memory bomb and an infinite loop. Each runs in a fresh sandbox and is judged from outside it, using evidence like the kernel's own count of refused forks. Our security suite also removes each protection in turn, to prove the checks fail when they should.
+Every record is signed, and your browser can check it. Containment is something you can try too. The public site has seven attack buttons: a secret hunt, network escape, deleting everything, filling the disk, a fork bomb, a memory bomb and an infinite loop. Each runs in a fresh sandbox and is judged from outside it, using evidence like the kernel's own count of refused forks. Our security suite also removes each protection in turn, to prove the checks fail when they should.
 
-We say plainly what this doesn't prove. A passing replay shows one symptom is gone, not that the patch is good. The demo bugs are real past bugs in linkding, recreated by reverting their fixes. On our latest repeat runs, two of the three got a verified fix every time. The third never did, and the system says so, leaving the filed issue standing.
+We say plainly what this doesn't prove. A passing replay shows one symptom is gone, not that the patch is good. The demo bugs are real past bugs in linkding, recreated by reverting their fixes. On our latest three runs each, two of the bugs got a verified fix every time, and the third got one once. When no fix passes, the system says so and leaves the filed issue standing.
 
 Beyond the hackathon, it could connect to helpdesks such as Zendesk, accept any repository with a recipe for running it, and move sandboxes to a separate worker VM, so that a support team's vague tickets arrive at engineering with proof attached.
 

@@ -101,9 +101,26 @@
         "rule": { "type": "string" }
       }
     },
+    "injection_flags": {
+      "type": "array",
+      "description": "Text that matched known injection phrasing. A warning for the developer that changes no outcome.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "excerpt"],
+        "properties": { "source": { "type": "string" }, "excerpt": { "type": "string" } }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "public_key", "value"],
+      "description": "Ed25519 over the canonical JSON of this manifest, with this field removed and manifest_sha256 kept.",
+      "properties": { "algorithm": { "const": "Ed25519" }, "public_key": { "type": "string" }, "value": { "type": "string" } }
+    },
     "manifest_sha256": {
       "$ref": "#/$defs/sha256",
-      "description": "SHA-256 of the canonical JSON of this manifest, with this field removed."
+      "description": "SHA-256 of the canonical JSON of this manifest, with this field and signature removed."
     }
   }
 }

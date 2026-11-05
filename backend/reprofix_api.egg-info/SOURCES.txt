@@ -6,6 +6,7 @@ app/agent/actions.py
 app/agent/freeze.py
 app/agent/graph.py
 app/agent/outcome.py
+app/agent/policy.py
 app/agent/prompts.py
 app/api/__init__.py
 app/api/routes.py
@@ -16,6 +17,7 @@ app/db/__init__.py
 app/db/store.py
 app/evidence/__init__.py
 app/evidence/manifest.py
+app/evidence/signing.py
 app/evidence/store.py
 app/llm/__init__.py
 app/llm/gateway.py
@@ -32,3 +34,4 @@ reprofix_api.egg-info/dependency_links.txt
 reprofix_api.egg-info/requires.txt
 reprofix_api.egg-info/top_level.txt
 tests/test_day2_units.py
+tests/test_day3_units.py

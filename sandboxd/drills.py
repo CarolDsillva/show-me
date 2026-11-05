@@ -207,7 +207,8 @@ def evaluate(
             Check("The bomb never finished", "NO LIMIT" not in output, "It stopped well short of 20,000 processes"),
         ]
     if drill == "memory":
-        died = oom_killed or not alive_after or result.exit_code not in (0, None)
+        # Reaching the wall clock means memory didn't stop it, so a timeout can't count here.
+        died = not result.timed_out and (oom_killed or not alive_after or result.exit_code not in (0, None))
         return [
             Check("Stopped at the memory limit", died and "NO LIMIT" not in output, f"Limit is {profile.memory_bytes // sb.GIB} GiB, with no swap"),
         ]

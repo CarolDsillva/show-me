@@ -135,3 +135,14 @@ def test_loop_drill_needs_the_host_to_kill_it_on_time():
     assert all(evaluate("loop", "", result=result(None, True, 15.2)))
     assert not all(evaluate("loop", "", result=result(0, False, 1.0)))
     assert not all(evaluate("loop", "", result=result(None, True, 60.0)))
+
+
+def test_test_counts_come_from_the_final_summary_only():
+    assert service.parse_test_counts(b"...\n1 failed, 142 passed in 148.53s (0:02:28)\n") == (142, 1)
+    assert service.parse_test_counts(b"3 passed in 1.0s\n") == (3, 0)
+    assert service.parse_test_counts(b"142 passed\nthen it crashed\n") == (None, None)
+    assert service.parse_test_counts(b"") == (None, None)
+
+
+def test_memory_drill_does_not_count_a_timeout_as_the_memory_limit():
+    assert not all(evaluate("memory", "ALLOCATED MIB 3000", alive_after=False, result=result(None, True, 15.2)))

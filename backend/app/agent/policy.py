@@ -20,6 +20,14 @@ FORBIDDEN = (
 )
 
 
+# A fix to a web app has no need for these, and they could fake or interrupt the tests. This is a
+# fixed list, so it raises the bar and doesn't prove a patch is harmless. A person still reads it.
+SUSPICIOUS = re.compile(
+    r"os\._exit|sys\.exit|\bos\.system\b|\bos\.kill\b|\bsubprocess\b|\bsocket\b|\bpytest\b|\bunittest\b"
+    r"|\beval\s*\(|\bexec\s*\(|__import__|\bimportlib\b|\bbuiltins\b|\bctypes\b|\bpickle\b"
+)
+
+
 @dataclasses.dataclass(frozen=True)
 class Edit:
     path: str
@@ -100,6 +108,12 @@ def build_patch(edits: list[Edit], read_source) -> Patch:
         1 for line in diff.splitlines()
         if line[:1] in ("+", "-") and not line.startswith(("+++", "---"))
     )
+    for line in diff.splitlines():
+        if line.startswith("+") and not line.startswith("+++"):
+            match = SUSPICIOUS.search(line)
+            if match:
+                reasons.append(f"“{match.group(0).strip()}” is not allowed in a fix")
+                break
     if changed_lines > MAX_CHANGED_LINES:
         reasons.append(f"The patch changes {changed_lines} lines, and the limit is {MAX_CHANGED_LINES}")
     return Patch(diff, hashlib.sha256(diff.encode()).hexdigest(), changed, changed_lines, reasons)

@@ -28,6 +28,7 @@ from app.evidence.store import EvidenceStore, sha256_hex
 from app.llm.gateway import BudgetExceeded, Gateway, LLMError
 from app.publish.github import Publisher, SourceAndPullRequests, issue_body, pull_request_body
 from app.sandbox_client.client import SandboxClient, SandboxUnavailable, SessionEnded
+from app.tickets.intake import find_injection
 
 MAX_READ_ROUNDS = 2
 MAX_READ_CHARS = 30_000
@@ -62,6 +63,7 @@ class State(TypedDict, total=False):
     decision: dict | None
     pull_request_url: str | None
     decided_at: str | None
+    flagged: list[str]
 
 
 @dataclasses.dataclass
@@ -124,12 +126,23 @@ class Nodes:
             pull_request_url=state.get("pull_request_url"), decided_at=state.get("decided_at"),
         ))
 
+    def _flag_hostile(self, state: State, source: str, text: str, flagged: list[str]) -> list[str]:
+        """Show a developer the attempt. This never changes what the agent does or the outcome."""
+        if source in flagged:
+            return flagged
+        excerpt = find_injection(text)
+        if excerpt is None:
+            return flagged
+        self._event(state, "injection_flagged", excerpt, {"source": source})
+        return [*flagged, source]
+
     def intake(self, state: State) -> State:
         self._status(state, "exploring")
+        flagged = self._flag_hostile(state, "ticket", state["ticket"], [])
         try:
             session = self.deps.sandbox.start_session(f"task-{state['task_id']}")
         except SandboxUnavailable as error:
-            return {"failure": f"Sandbox unavailable: {error}", "session_id": None}
+            return {"failure": f"Sandbox unavailable: {error}", "session_id": None, "flagged": flagged}
         self._event(state, "sandbox_created", "Browser session started", {
             "session_id": session["session_id"], "attestation": session["attestation"],
             "deadline_epoch": session["deadline_epoch"],
@@ -137,9 +150,10 @@ class Nodes:
         page = session.get("initial") or {}
         shot = self._keep_screenshot(state, page)
         self._event(state, "browser_action", "Logged in with a throwaway test user", {"url": page.get("url"), "screenshot_sha256": shot})
+        flagged = self._flag_hostile(state, "page", str(page.get("text") or ""), flagged)
         return {
             "session_id": session["session_id"], "page": strip_page(page), "screenshot_sha": shot, "trail": [],
-            "notes": [], "steps_used": 0, "finish": None, "failure": None, "replays": [],
+            "notes": [], "steps_used": 0, "finish": None, "failure": None, "replays": [], "flagged": flagged,
         }
 
     def explore(self, state: State) -> State:
@@ -185,6 +199,7 @@ class Nodes:
         update: State = {"trail": trail, "notes": notes, "steps_used": used + 1, "screenshot_sha": shot}
         if not result.get("refused"):
             update["page"] = strip_page(result)
+            update["flagged"] = self._flag_hostile(state, "page", str(result.get("text") or ""), list(state.get("flagged") or []))
         return update
 
     def route_explore(self, state: State) -> str:
@@ -390,8 +405,8 @@ class Nodes:
             regression_patched = regression_baseline = None
             if len(replays) == required and replays[-1].get("exit_code") == 0:
                 self._event(state, "agent_thought", "Running the regression tests with and without the patch")
-                regression_baseline = self._store_run(state, self.deps.sandbox.regression(f"regression-v2-{self.deps.settings.target_commit}"))
-                regression_patched = self._store_run(state, self.deps.sandbox.regression(f"{state['task_id']}-regression-v2-{patch.sha256[:16]}", patch.diff))
+                regression_baseline = self._store_run(state, self.deps.sandbox.regression(f"regression-v3-{self.deps.settings.target_commit}"))
+                regression_patched = self._store_run(state, self.deps.sandbox.regression(f"{state['task_id']}-regression-v3-{patch.sha256[:16]}", patch.diff))
                 regressions = [*regressions, regression_baseline, regression_patched]
         except SandboxUnavailable as error:
             return {"failure": f"Sandbox unavailable: {error}"}

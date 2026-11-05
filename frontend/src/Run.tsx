@@ -109,7 +109,7 @@ export function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
             <div className="links">
               {task.pull_request_url && <a className="strong-link" href={task.pull_request_url} rel="noreferrer noopener" target="_blank">Open the pull request</a>}
               {task.issue_url && <a href={task.issue_url} rel="noreferrer noopener" target="_blank">Read the filed issue</a>}
-              <a href={`/api/tasks/${taskId}/manifest`} rel="noreferrer noopener" target="_blank">See the evidence</a>
+              <a href={`?verify=${taskId}`}>Check the evidence</a>
               {finished && <button onClick={onNew}>Report another bug</button>}
             </div>
           </div>
@@ -142,6 +142,8 @@ export function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
               <blockquote>{task.ticket}</blockquote>
             </section>
           )}
+
+          <HostileFlags events={events} />
 
           {waiting && task && <Decision taskId={taskId} onDecided={() => window.location.reload()} />}
 
@@ -254,7 +256,24 @@ function Proof({ events, taskId, recorded }: { events: TaskEvent[]; taskId: stri
           </dl>
         </>
       )}
-      <a href={`/api/tasks/${taskId}/manifest`} rel="noreferrer noopener" target="_blank">See the full evidence</a>
+      <a href={`?verify=${taskId}`}>Check the signed evidence</a>
+    </section>
+  );
+}
+
+function HostileFlags({ events }: { events: TaskEvent[] }) {
+  const flags = events.filter((e) => e.type === "injection_flagged");
+  if (flags.length === 0) return null;
+  return (
+    <section className="hostile" role="status">
+      <h2>Hidden instructions found</h2>
+      {flags.map((flag) => (
+        <div key={flag.seq} className="hostile-item">
+          <strong>{flag.data?.source === "ticket" ? "In the ticket" : "On a page the agent read"}</strong>
+          <blockquote>{flag.text}</blockquote>
+        </div>
+      ))}
+      <p>They can’t change the result, because code decides it. Read the change carefully anyway. This check looks for known wording, so it can miss others.</p>
     </section>
   );
 }
