@@ -1,0 +1,71 @@
+{
+  "image": "sha256:f8f038709e70c2525b0605c86de34fa38adcc61c44a1a7bf6972907aef51038c",
+  "steps": {
+    "copy_app": {
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.22
+    },
+    "load_by_tar_stream": {
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.12
+    },
+    "create_test_user": {
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 5.99
+    },
+    "start_app": {
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.12
+    },
+    "app_responding": {
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 7.15
+    },
+    "browser_smoke": {
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 6.38
+    }
+  },
+  "ok": true,
+  "seconds_to_attested": 0.2,
+  "attested_runtime": "runsc",
+  "attested_network": "none",
+  "tar_stream_verified": true,
+  "browser": {
+    "steps": [
+      {
+        "step": "chromium_launched",
+        "at_s": 1.45
+      },
+      {
+        "step": "login_page_loaded",
+        "at_s": 2.4
+      },
+      {
+        "step": "logged_in",
+        "at_s": 4.42
+      },
+      {
+        "step": "screenshot_taken",
+        "at_s": 4.56
+      },
+      {
+        "step": "external_navigation_attempted",
+        "at_s": 4.66
+      }
+    ],
+    "title": "Bookmarks - Linkding",
+    "url": "http://127.0.0.1:9090/bookmarks",
+    "external_navigation": "blocked: Error"
+  },
+  "screenshot_sha256": "4e71cc6ca93718ff20fc842f3a97eb19db0be115efd4869df151d1f7dec352d0",
+  "screenshot_is_png": true,
+  "container_destroyed": true,
+  "total_seconds": 20.67
+}

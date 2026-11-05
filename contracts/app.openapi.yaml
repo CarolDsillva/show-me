@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: ReproFix API
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Public API behind Caddy. All ticket, page, diff and output text it returns is untrusted,
     and clients must render it as plain text.
@@ -163,12 +163,13 @@ components:
         note: { type: string, maxLength: 1000 }
     Outcome:
       type: string
-      enum: [PENDING, NOT_REPRODUCED, REPRODUCED, NO_VERIFIED_FIX, FIX_VERIFIED, APPROVED, REJECTED, FAILED]
+      enum: [PENDING, NOT_REPRODUCED, REPRODUCED, NO_VERIFIED_FIX, FIX_VERIFIED, APPROVED, REJECTED, FAILED, CONTAINED, NOT_CONTAINED]
     Task:
       type: object
       required: [id, kind, status, outcome, created_at]
       properties:
         id: { type: string }
+        ticket: { type: string, description: Untrusted text, cleaned and capped }
         kind: { type: string, enum: [ticket, drill] }
         status: { type: string, enum: [queued, exploring, confirming, filing, patching, verifying, awaiting_approval, publishing, done] }
         outcome: { $ref: "#/components/schemas/Outcome" }

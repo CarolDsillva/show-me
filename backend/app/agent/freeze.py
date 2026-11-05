@@ -65,6 +65,7 @@ with sync_playwright() as playwright:
         except AssertionError as error:
             print("SYMPTOM OBSERVED:", str(error)[:500], flush=True)
             code = 42
+    print("FINAL URL:", page.url, flush=True)
     try:
         page.screenshot(path="/tmp/final.png", type="png")
     except Exception:
@@ -113,8 +114,10 @@ def render_check(expectation: Expectation) -> str:
 def simplify_trail(trail: list[NextAction]) -> list[NextAction]:
     """Drop steps with no lasting effect, so the script reads as the shortest route found.
 
-    A goto straight before another goto does nothing, and a repeated run of identical steps
-    adds nothing. The replays still decide whether the shorter script shows the symptom.
+    A goto straight before another goto does nothing, a repeated run of identical steps adds
+    nothing, and plain link clicks before the last goto only wander. Anything that fills in or
+    submits data is kept, because it may matter. The replays still decide whether the shorter
+    script shows the symptom.
     """
     def key(step: NextAction) -> tuple:
         return (step.action, step.path, step.selector, step.value)
@@ -139,6 +142,10 @@ def simplify_trail(trail: list[NextAction]) -> list[NextAction]:
         if goto_pairs:
             del steps[goto_pairs[0]]
             changed = True
+    last_goto = max((i for i, step in enumerate(steps) if step.action == "goto"), default=0)
+    before = steps[:last_goto]
+    if all(step.action == "goto" or (step.action == "click" and (step.selector or "").startswith("a[href")) for step in before):
+        steps = steps[last_goto:]
     return steps
 
 

@@ -32,11 +32,11 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 
 | Task | Owner | State | Blocker |
 |---|---|---|---|
-| Update `contracts/` for what Day 2 changed: `initial` and screenshots on sessions, `ticket` on tasks, replay stdout and artifact content | architect | Not started | None |
-| Run hostile and not-a-bug tickets, then repeat the demo bugs for a reliability figure | qa-evaluator | Not started | None |
+| Test the rejection path | User | Waiting | Developer decision on task `748f966b` |
+| Show each new security test can fail against a weakened setting | security-reviewer | Not started | None |
+| Hostile content in a page, not just in a ticket (SEC-14), and XSS strings in the browser (SEC-15) | security-reviewer | Not started | None |
+| Reboot test, snapshot, rollback rehearsal, smoke test | devops-engineer | Not started | None |
 | Regression set is a 142-test subset, because the full suite takes about 25 minutes under gVisor. Say so in the demo | architect | Open | None |
-| Reaper test (SEC-11), and security tests against the live `sandboxd` | security-reviewer | Not started | None |
-| Sandboxd: treat a dead sandbox as `sandbox_error` (see Day 1 findings) | sandbox-engineer | Written, unit tested only | None |
 | Rerun the JSON check on `glm-5.3` and `qwen3.8-27b` with a higher token limit | agent-orchestrator | Not started | None |
 
 ## Test results
@@ -46,7 +46,8 @@ Record the latest real run only. Leave a row at "not run" rather than estimating
 | Suite | Commit | Where it ran | Result | Log |
 |---|---|---|---|---|
 | Unit: `backend/tests`, `sandboxd/tests` | Uncommitted | This PC | 54 passed. Uses test doubles, so it says nothing about containment | Local run, 2026-11-05 |
-| Security: `tests/security` | Uncommitted at run time | Vultr VM | 16 passed | `security/results/20261105T064640Z/security.log` |
+| Security: `tests/security` | `c093196` plus uncommitted changes | Vultr VM, live `sandboxd` | 47 passed, including SEC-11, 12, 18, 20 and all 7 drills. New tests not yet shown to fail against a weakened setting | `security/results/20261105T114622Z/security.log` |
+| Repeat runs: `evals/run_repeats.py` | `c093196` plus uncommitted changes | Public URL, real Inference | Tag count link 2 of 2 verified, tag search 2 of 2 verified, notes link 0 of 2 verified and reproduced both times. Tokens per run about 31k, 41k and 82k. All sandboxes destroyed | Console output, 2026-11-05 |
 | Spike: linkding and Chromium under gVisor | Uncommitted at run time | Vultr VM | Passed: login, screenshot, external navigation blocked, container destroyed, 19 s in total | `security/results/20261105T064640Z/spike-app.json` |
 | Model probe | Uncommitted at run time | This PC, live Vultr Inference, one call per check | `qwen3.8-flash-next` passed all 4. `glm-5.3` and `qwen3.8-27b` passed 3 and failed JSON with an empty answer. Cause unconfirmed | Console output, 2026-11-04 |
 | Integration, end-to-end, evals | | | Not written | |
@@ -101,5 +102,6 @@ Also checked locally: Python compiles, shell scripts pass `bash -n`, OpenAPI and
 | 2026-11-04 | Chose ReproFix and linkding. Rewrote docs. Initialized git, wrote contracts, provisioning and host setup scripts, sandbox image, spike, security tests, threat model and model probe. No commits | User adds keys, then provision and run the spike |
 | 2026-11-05 | Created the VM, installed the host, ran the model probe. Flattened the image env, rewrote SEC-04 after diagnosing it. G1 passed | User approves the fork, then start Day 2 |
 | 2026-11-05 | Day 2 committed as `7e29a47`. Added two more real demo bugs to the baseline (`7caa47b`). Built patch proposals, policy, patched replays, regression subset, durable approval, pull request publishing and the approval screen. Frozen script exits 42 on the bug and 0 on the patch. Wrong passcode refused, and the wait survived a restart. Uncommitted | Developer decides on the two fixes, which tests the pull request path |
+| 2026-11-05 | Day 3 committed as `c093196`. Added the containment drill, health panel, live security tests and repeat runs. Updated contracts and architecture. Found and fixed `run-spike.sh` rebuilding the image out from under the live service. Not-a-bug and hostile tickets behaved correctly on one run each. Uncommitted | Rejection test, commit, then the remaining SEC tests and reboot test |
 | 2026-11-05 | Fork and `reprofix-baseline` branch (`d0ee9f5`, fix #1452 reverted). Built `sandboxd`, API, agent, publisher, frontend, deploy. Real ticket reproduced 3 of 3 on the public URL. Inference key had to be copied a second time, because the saved one stopped working for an unknown reason | User adds the GitHub token, then file the first real issue |
 | 2026-11-05 | User added the token. First real issue filed on the fork, and G2 passed | Commit Day 2, then Day 3: patch runs and the fix phase decision |

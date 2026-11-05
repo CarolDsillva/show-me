@@ -27,6 +27,11 @@ class DecisionRequest(BaseModel):
     note: str | None = Field(default=None, max_length=1000)
 
 
+class DrillRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    drill: Literal["secrets", "network", "delete", "disk", "fork", "memory", "loop"]
+
+
 class TicketRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str = Field(min_length=MIN_LENGTH, max_length=MAX_LENGTH)
@@ -143,6 +148,20 @@ def task_artifact(task_id: str, sha256: str, request: Request) -> Response:
             "Content-Security-Policy": "default-src 'none'; sandbox",
         },
     )
+
+
+@router.post("/drills", status_code=202)
+def start_drill(body: DrillRequest, request: Request) -> dict:
+    state = request.app.state
+    ip = client_ip(request)
+    hour_ago = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat()
+    if state.store.count_recent_from(ip, hour_ago) >= state.settings.drills_per_ip_per_hour:
+        raise HTTPException(429, "Too many runs from this address. Try again later.")
+    try:
+        task_id = state.worker.submit_drill(body.drill, ip)
+    except QueueFull as error:
+        raise HTTPException(429, "The queue is full. Try again in a few minutes.") from error
+    return task_view(state.store.get_task(task_id))
 
 
 @router.get("/health")

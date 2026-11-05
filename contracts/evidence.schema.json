@@ -97,7 +97,7 @@
       "additionalProperties": false,
       "required": ["value", "rule"],
       "properties": {
-        "value": { "enum": ["NOT_REPRODUCED", "REPRODUCED", "NO_VERIFIED_FIX", "FIX_VERIFIED", "APPROVED", "REJECTED", "FAILED"] },
+        "value": { "enum": ["NOT_REPRODUCED", "REPRODUCED", "NO_VERIFIED_FIX", "FIX_VERIFIED", "APPROVED", "REJECTED", "FAILED", "CONTAINED", "NOT_CONTAINED"] },
         "rule": { "type": "string" }
       }
     },

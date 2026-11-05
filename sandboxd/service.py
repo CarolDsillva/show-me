@@ -25,6 +25,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+import drills
 import sandbox as sb
 import target
 
@@ -91,7 +92,8 @@ class RunRequest(Strict):
     run_key: str = Field(pattern=KEY)
     profile: Literal["browser-session"]
     target_ref: Literal["baseline"]
-    kind: Literal["replay", "regression"]
+    kind: Literal["replay", "regression", "drill"]
+    drill: Literal["secrets", "network", "delete", "disk", "fork", "memory", "loop"] | None = None
     script: str | None = Field(default=None, max_length=200_000)
     script_sha256: str | None = Field(default=None, pattern=SHA256)
     patch: str | None = Field(default=None, max_length=200_000)
@@ -400,15 +402,23 @@ def create_run(request: RunRequest) -> dict:
         # Checked on the bytes that will run, so a changed script can never replay as the frozen one.
         if sha256(request.script.encode()) != request.script_sha256:
             raise HTTPException(422, "Script doesn't match script_sha256")
-    elif request.script is not None or request.script_sha256 is not None:
-        raise HTTPException(422, "A regression run takes no script")
+    elif request.script is not None or request.script_sha256 is not None or request.patch is not None:
+        if request.kind == "drill" or request.script is not None or request.script_sha256 is not None:
+            raise HTTPException(422, "This kind of run takes no script or patch")
+    if request.kind == "drill" and request.drill is None:
+        raise HTTPException(422, "A drill must name one of the fixed drills")
+    if request.kind != "drill" and request.drill is not None:
+        raise HTTPException(422, "Only a drill names a drill")
     path = run_path(request.run_key)
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     if not capacity.acquire(blocking=True, timeout=120):
         raise HTTPException(503, "No sandbox capacity")
     try:
-        result = run_in_sandbox(request)
+        if request.kind == "drill":
+            result = {"run_key": request.run_key, "kind": "drill", **drills.run(request.drill, IMAGE, CANARY_PATH, attestation_view)}
+        else:
+            result = run_in_sandbox(request)
     finally:
         capacity.release()
     path.parent.mkdir(parents=True, exist_ok=True)

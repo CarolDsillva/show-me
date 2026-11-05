@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy the sandbox work to the VM, build the image, run the containment spike as the
+# Copy the sandbox work to the VM, and run the containment spike against the deployed image as the
 # rfsandboxd service user, and bring the results back to security/results/.
 set -euo pipefail
 
@@ -14,7 +14,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="security/results/${STAMP}"
 mkdir -p "$OUT"
 
-tar -cf - --exclude='__pycache__' sandbox-images sandboxd tests/security \
+tar -cf - --exclude='__pycache__' sandboxd tests/security \
   | ssh "${SSH_OPTS[@]}" "root@${VM_IP}" "rm -rf ${REMOTE} && mkdir -p ${REMOTE} && tar -xf - -C ${REMOTE}"
 
 # The remote exit status is kept so results still come back when a check fails.
@@ -25,15 +25,13 @@ set -uo pipefail
 cd ${REMOTE}
 mkdir -p results
 
-docker build -t reprofix/target-linkding:baseline sandbox-images/target-linkding > results/image-build.log 2>&1
-build_status=\$?
-tail -5 results/image-build.log
-if [ "\$build_status" -ne 0 ]; then
-  echo "Image build failed. See image-build.log."
+# Test the image the live service uses. Rebuilding here would remove it from under sandboxd.
+IMAGE="\$(sed -n 's/^REPROFIX_IMAGE=//p' /etc/reprofix/sandboxd.env)"
+if [ -z "\$IMAGE" ] || ! docker image inspect "\$IMAGE" > /dev/null 2>&1; then
+  echo "The deployed image is missing. Run scripts/deploy.sh first."
   chown -R rfsandboxd: ${REMOTE}
   exit 1
 fi
-IMAGE="\$(docker inspect --format '{{.Id}}' reprofix/target-linkding:baseline)"
 echo "Image: \$IMAGE"
 echo "\$IMAGE" > results/image-id.txt
 

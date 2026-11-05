@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: sandboxd
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Internal API on a Unix socket, reachable only by the rfsock group. Callers name a
     profile. They can't set limits, images, mounts or env. Unknown fields are rejected.
@@ -97,6 +97,7 @@ components:
         session_id: { type: string }
         deadline_epoch: { type: integer }
         attestation: { $ref: "#/components/schemas/Attestation" }
+        initial: { $ref: "#/components/schemas/ActionResult", description: The logged-in page. Null if the session already existed }
     BrowserAction:
       type: object
       additionalProperties: false
@@ -115,8 +116,12 @@ components:
         ok: { type: boolean }
         error: { type: [string, "null"] }
         url: { type: string }
+        title: { type: string, description: Untrusted }
         text: { type: string, description: Untrusted page text, size capped }
-        screenshot_sha256: { $ref: "#/components/schemas/Sha256" }
+        elements: { type: array, items: { type: object }, description: Untrusted interactive elements with suggested selectors }
+        console: { type: array, items: { type: string }, description: Untrusted browser console errors }
+        screenshot_b64: { type: [string, "null"], description: Base64 PNG. Dropped unless it really is a PNG }
+        screenshot_sha256: { type: [string, "null"] }
     RunRequest:
       type: object
       additionalProperties: false
@@ -125,10 +130,10 @@ components:
         run_key: { type: string, maxLength: 128 }
         profile: { type: string, enum: [browser-session] }
         target_ref: { type: string, enum: [baseline] }
-        kind: { type: string, enum: [replay, regression, drill] }
-        script: { type: string, maxLength: 200000, description: Frozen Playwright script. Required for replay }
-        script_sha256: { $ref: "#/components/schemas/Sha256" }
-        patch: { type: string, maxLength: 200000, description: Unified diff that already passed policy }
+        kind: { type: string, enum: [replay, regression, drill], description: Regression and drill commands are fixed on the server }
+        script: { type: string, maxLength: 200000, description: Frozen Playwright script. Required for replay and refused otherwise }
+        script_sha256: { $ref: "#/components/schemas/Sha256", description: Must match the script bytes. Required for replay }
+        patch: { type: string, maxLength: 200000, description: Unified diff that already passed policy. Applied only inside the sandbox. Not for drills }
         drill: { type: string, enum: [secrets, network, delete, disk, fork, memory, loop] }
     RunResult:
       type: object
@@ -140,6 +145,24 @@ components:
           type: string
           enum: [exited, timed_out, oom_killed, sandbox_error]
         symptom_observed: { type: [boolean, "null"], description: From the runner's marker exit code }
+        stdout: { type: string, description: Untrusted and capped. The caller stores it as an opaque blob }
+        stderr: { type: string, description: Untrusted and capped. The caller stores it as an opaque blob }
+        applied_patch_sha256: { type: [string, "null"] }
+        patch_failed: { type: boolean, description: The patch didn't apply inside the sandbox }
+        failed_tests: { type: array, items: { type: string }, description: For regression runs. Filtered and capped }
+        contained: { type: boolean, description: For drills. True only if every host-side check passed }
+        checks:
+          type: array
+          description: For drills
+          items:
+            type: object
+            required: [name, passed, detail]
+            properties:
+              name: { type: string }
+              passed: { type: boolean }
+              detail: { type: string }
+        output_tail: { type: string, description: For drills. Untrusted }
+        error: { type: string, description: Why the run couldn't finish normally }
         stdout_sha256: { $ref: "#/components/schemas/Sha256" }
         stderr_sha256: { $ref: "#/components/schemas/Sha256" }
         stdout_truncated: { type: boolean }
@@ -153,6 +176,7 @@ components:
               name: { type: string }
               sha256: { $ref: "#/components/schemas/Sha256" }
               bytes: { type: integer }
+              content_b64: { type: string, description: Base64 file content, capped. Untrusted }
         started_at: { type: string, format: date-time }
         finished_at: { type: string, format: date-time }
         attestation: { $ref: "#/components/schemas/Attestation" }

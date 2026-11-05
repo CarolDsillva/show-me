@@ -30,6 +30,7 @@ class Settings:
     daily_token_budget: int = 2_000_000
     max_queue: int = 5
     tickets_per_ip_per_hour: int = 10
+    drills_per_ip_per_hour: int = 30
 
 
 def load_settings() -> Settings:

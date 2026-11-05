@@ -44,6 +44,8 @@ const OUTCOME_WORDS: Record<string, string> = {
   NO_VERIFIED_FIX: "Bug filed, but no fix was verified",
   APPROVED: "Fix approved and pull request opened",
   REJECTED: "Fix rejected",
+  CONTAINED: "Contained",
+  NOT_CONTAINED: "Not contained",
 };
 
 function taskFromUrl(): string | null {
@@ -53,9 +55,13 @@ function taskFromUrl(): string | null {
 
 export function App() {
   const [taskId, setTaskId] = useState<string | null>(taskFromUrl);
+  const [drills, setDrills] = useState(() => new URLSearchParams(window.location.search).get("view") === "drills");
 
   useEffect(() => {
-    const onPop = () => setTaskId(taskFromUrl());
+    const onPop = () => {
+      setTaskId(taskFromUrl());
+      setDrills(new URLSearchParams(window.location.search).get("view") === "drills");
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -63,6 +69,7 @@ export function App() {
   function open(id: string | null) {
     window.history.pushState(null, "", id ? `?task=${id}` : window.location.pathname);
     setTaskId(id);
+    setDrills(false);
   }
 
   return (
@@ -79,8 +86,20 @@ export function App() {
           ReproFix
         </a>
         <p>From a customer's words to a bug a developer can trust.</p>
+        <a
+          className="nav-link"
+          href="?view=drills"
+          onClick={(event) => {
+            event.preventDefault();
+            window.history.pushState(null, "", "?view=drills");
+            setTaskId(null);
+            setDrills(true);
+          }}
+        >
+          Attack the sandbox
+        </a>
       </header>
-      {taskId ? <Run taskId={taskId} onNew={() => open(null)} /> : <Submit onStarted={open} />}
+      {drills ? <Drills /> : taskId ? <Run taskId={taskId} onNew={() => open(null)} /> : <Submit onStarted={open} />}
     </div>
   );
 }
@@ -213,6 +232,8 @@ function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
   const waiting = task?.status === "awaiting_approval";
   const failingShot = replays.map((e) => e.data?.screenshot_sha256).filter(Boolean).pop();
   const passingShot = patchedReplays.map((e) => e.data?.screenshot_sha256).filter(Boolean).pop();
+  const failingUrl = replays.map((e) => e.data?.final_url).filter(Boolean).pop();
+  const passingUrl = patchedReplays.map((e) => e.data?.final_url).filter(Boolean).pop();
 
   if (missing) {
     return (
@@ -246,10 +267,12 @@ function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
         <section className="compare">
           <figure>
             <figcaption>Before the fix: the bug appears</figcaption>
+            {failingUrl ? <div className="address">{String(failingUrl).replace("http://127.0.0.1:9090", "")}</div> : null}
             <img src={`/api/tasks/${taskId}/artifacts/${String(failingShot)}`} alt="The final screen when the frozen steps run on the current code" />
           </figure>
           <figure>
             <figcaption>After the fix: same steps, bug gone</figcaption>
+            {passingUrl ? <div className="address">{String(passingUrl).replace("http://127.0.0.1:9090", "")}</div> : null}
             <img src={`/api/tasks/${taskId}/artifacts/${String(passingShot)}`} alt="The final screen when the same frozen steps run on the patched code" />
           </figure>
         </section>
@@ -382,5 +405,116 @@ function Decision({ taskId, onDecided }: { taskId: string; onDecided: () => void
       </div>
       {error && <p role="alert" className="error">{error}</p>}
     </form>
+  );
+}
+
+const DRILLS: { id: string; name: string; attack: string }[] = [
+  { id: "secrets", name: "Steal secrets", attack: "Searches the environment, processes and files for credentials" },
+  { id: "network", name: "Phone home", attack: "Connects to an outside address, the cloud metadata service and Docker" },
+  { id: "delete", name: "Delete everything", attack: "Runs rm -rf / and writes to /etc and /usr" },
+  { id: "disk", name: "Fill the disk", attack: "Writes until something stops it" },
+  { id: "fork", name: "Fork bomb", attack: "Starts processes until something stops it" },
+  { id: "memory", name: "Eat all memory", attack: "Allocates memory until something stops it" },
+  { id: "loop", name: "Never stop", attack: "Spins forever and ignores everything" },
+];
+
+type Check = { name: string; passed: boolean; detail: string };
+type DrillRun = { taskId: string; drill: string; outcome?: string; rule?: string; checks?: Check[]; seconds?: number };
+type Host = { canary_sha256: string | null; disk_free_bytes: number; load_1m: number; running_sandboxes: number };
+
+function Drills() {
+  const [runs, setRuns] = useState<Record<string, DrillRun>>({});
+  const [host, setHost] = useState<Host | null>(null);
+  const [apiUp, setApiUp] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const sample = () =>
+      fetch("/api/health/host")
+        .then(async (response) => {
+          setApiUp(response.ok);
+          if (response.ok) setHost(await response.json());
+        })
+        .catch(() => setApiUp(false));
+    sample();
+    const timer = window.setInterval(sample, 2000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  async function start(drill: string) {
+    setError(null);
+    try {
+      const response = await fetch("/api/drills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drill }),
+      });
+      if (response.status !== 202) {
+        const body = await response.json().catch(() => ({}));
+        setError(body.detail ?? "The drill didn't start. Try again in a minute.");
+        return;
+      }
+      const taskId: string = (await response.json()).id;
+      setRuns((current) => ({ ...current, [drill]: { taskId, drill } }));
+      const stream = new EventSource(`/api/tasks/${taskId}/events`);
+      stream.onmessage = (message) => {
+        const event: TaskEvent = JSON.parse(message.data);
+        if (event.type === "limit_hit") {
+          setRuns((current) => ({
+            ...current,
+            [drill]: { ...current[drill], checks: event.data?.checks as Check[], seconds: event.data?.seconds as number },
+          }));
+        }
+        if (event.type === "outcome") {
+          setRuns((current) => ({ ...current, [drill]: { ...current[drill], outcome: event.text, rule: String(event.data?.rule ?? "") } }));
+        }
+        if (event.type === "status_changed" && event.text === "done") stream.close();
+      };
+    } catch {
+      setError("The server didn't answer. Check your connection and try again.");
+    }
+  }
+
+  return (
+    <main>
+      <h1 className="now">Run real attacks inside the sandbox</h1>
+      <p className="lede">
+        Each button runs a hostile script in a fresh sandbox, as if the AI had written it. The results below are
+        measured from outside the sandbox, on the host.
+      </p>
+      <section className="host" aria-label="Host health, measured outside any sandbox">
+        <div><strong>API</strong><span>{apiUp ? "Responding" : "Not responding"}</span></div>
+        <div><strong>Sandboxes running</strong><span>{host ? host.running_sandboxes : "Checking"}</span></div>
+        <div><strong>Host load</strong><span>{host ? host.load_1m.toFixed(2) : "Checking"}</span></div>
+        <div><strong>Host disk free</strong><span>{host ? `${(host.disk_free_bytes / 1024 ** 3).toFixed(1)} GiB` : "Checking"}</span></div>
+        <div><strong>Host canary file</strong><span>{host?.canary_sha256 ? host.canary_sha256.slice(0, 12) : "Checking"}</span></div>
+      </section>
+      {error && <p role="alert" className="error">{error}</p>}
+      <div className="drills">
+        {DRILLS.map((drill) => {
+          const run = runs[drill.id];
+          return (
+            <section key={drill.id} className={`drill ${run?.outcome ? `drill-${run.outcome}` : ""}`}>
+              <h2>{drill.name}</h2>
+              <p>{drill.attack}</p>
+              <button disabled={Boolean(run && !run.outcome)} onClick={() => start(drill.id)}>
+                {run && !run.outcome ? "Running" : run ? "Run again" : "Run this attack"}
+              </button>
+              {run?.outcome && <p className="drill-result">{OUTCOME_WORDS[run.outcome] ?? run.outcome}{run.seconds ? ` in ${run.seconds} s` : ""}</p>}
+              {run?.checks && (
+                <ul>
+                  {run.checks.map((check) => (
+                    <li key={check.name} className={check.passed ? "pass" : "fail"}>
+                      {check.passed ? "Passed" : "Failed"}: {check.name}. <span className="fine">{check.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {run?.outcome && <a href={`/api/tasks/${run.taskId}/manifest`} target="_blank" rel="noreferrer noopener">See the evidence manifest</a>}
+            </section>
+          );
+        })}
+      </div>
+    </main>
   );
 }

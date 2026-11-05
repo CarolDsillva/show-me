@@ -1,6 +1,6 @@
 # ReproFix architecture
 
-**Status: direction chosen by the user on 2026-11-04.** Items marked *verify* have not been tested on real infrastructure yet.
+**Status: direction chosen by the user on 2026-11-04.** Gates G1 to G3 passed on the VM on 2026-11-05. See `PROJECT_STATUS.md` for evidence.
 
 ## 1. Product
 
@@ -74,7 +74,7 @@ The browser and the app share one container, so neither needs any network beyond
 
 ### Why these choices
 
-**Docker with gVisor.** Docker is the event's strong recommendation, and gVisor adds a separate kernel boundary. Chromium's own sandbox needs privileges we deliberately remove, so it runs with `--no-sandbox` and gVisor is the outer boundary. We disclose this. *Verify on Day 1 that Chromium runs under `runsc` with these limits.* Fallback is plain runc with the same hardening, disclosed as a shared-kernel boundary.
+**Docker with gVisor.** Docker is the event's strong recommendation, and gVisor adds a separate kernel boundary. Chromium's own sandbox needs privileges we deliberately remove, so it runs with `--no-sandbox` and gVisor is the outer boundary. We disclose this. Chromium runs under `runsc` with these limits, as shown on the VM on Day 1. Plain runc with the same hardening was the unused fallback.
 
 **linkding as the target.** MIT licensed, small, Django and SQLite with no outside services, an existing Playwright test suite, and real bug fixes with small diffs. Template and Python changes need no build step, so a patch can be tested quickly. MVP patches are limited to Python and templates. A fixed target also removes a whole class of abuse, because nobody can submit their own repository.
 
@@ -128,6 +128,9 @@ Live production changes, deploying patches, private repositories, user accounts,
 - Demo bugs are real historic bugs, recreated by reverting their fixes on our fork. We say so.
 - Chromium's own sandbox is off, and gVisor is the boundary.
 - Hashes prove an evidence bundle is intact after creation, not that the server creating it was honest.
+- A patch runs in the same process as the regression tests, so a malicious patch could fake their result. It stays contained, and the frozen replay runs separately, but this is another reason a developer must read the diff.
+- The patch prompt tells the model the app uses Hotwire Turbo. That is general codebase knowledge, and it likely helps on the two demo bugs that were fixed.
+- The regression set is a subset, not the full suite.
 
 ## 5. Agent graph
 
@@ -160,10 +163,10 @@ Live production changes, deploying patches, private repositories, user accounts,
 |---|---|---|---|
 | `intake` | Summarize the ticket and form hypotheses | Yes | None |
 | `explore` | Choose the next browser action from a screenshot and page summary | Yes | Action in the session sandbox |
-| `freeze_repro` | Turn the action trail into a Playwright script with one symptom assertion, and hash it | Yes | Stores script |
+| `freeze_repro` | Code renders the action trail and the model's expected behavior into a Playwright script, and hashes it. No model text becomes code | No | Stores script |
 | `confirm_repro` | Replay in three fresh runs | No | Three runs, deduplicated by `run_key` |
 | `file_issue` | Write and publish the issue | Yes, for text | One issue, idempotent |
-| `propose_patch` | Read relevant source, return a unified diff | Yes | None |
+| `propose_patch` | Read relevant source, at most two rounds, and return exact text edits. Code builds the diff, so it always applies | Yes | None |
 | `verify_patch` | Check policy, replay three times, run regression tests | No | Runs, deduplicated |
 | `await_approval` | Wait for the developer, for as long as it takes | No | None |
 | `open_pr` | Push branch, open a pull request on the fork | No | One pull request, idempotent |
@@ -184,14 +187,14 @@ Computed by code. The model can't change them.
 **Fix verified** requires all of these:
 - The patch passes policy.
 - The frozen script passes in three fresh runs on the patched code.
-- The regression test set passes, with no test passing on baseline now failing.
+- No test passing on baseline now fails. The set is a fixed 142-test subset around the tags and bookmarks UI, because the full suite takes about 25 minutes under gVisor.
 - All containers were attested and destroyed.
 
 **Patch policy** (deterministic):
 - Only `bookmarks/**/*.py` and `bookmarks/templates/**`.
-- Never migrations, settings, test files, CI, dependency files or lockfiles.
+- Never migrations, settings, management commands, URL routing, test files, CI, dependency files or lockfiles.
 - At most 5 files and 150 changed lines.
-- Must apply cleanly on the pinned commit.
+- Each edit's old text must occur exactly once at the pinned commit.
 
 Failing any rule gives `FIX_REJECTED`, and the reason is shown.
 

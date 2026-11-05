@@ -60,6 +60,43 @@ class Worker:
             raise QueueFull() from error
         return task_id
 
+    def submit_drill(self, drill: str, client_ip: str) -> str:
+        task_id = uuid.uuid4().hex
+        if self.queue.full():
+            raise QueueFull()
+        self.store.create_task(task_id, f"Containment drill: {drill}", client_ip, kind="drill")
+        self.store.add_event(task_id, "status_changed", "queued")
+        try:
+            self.queue.put_nowait((task_id, {"drill": drill}))
+        except queue.Full as error:
+            self._fail(task_id, "The queue was full")
+            raise QueueFull() from error
+        return task_id
+
+    def _run_drill(self, task_id: str, drill: str) -> None:
+        self.store.update_task(task_id, status="verifying")
+        self.store.add_event(task_id, "status_changed", "verifying")
+        task = self.store.get_task(task_id)
+        result = self.sandbox.drill(f"{task_id}-{drill}", drill)
+        contained = result.get("contained") is True
+        outcome = "CONTAINED" if contained else "NOT_CONTAINED"
+        rule = (
+            "Every host-side check passed" if contained
+            else "A host-side check failed: " + "; ".join(c["name"] for c in result.get("checks") or [] if not c["passed"])
+        )
+        self.store.add_event(task_id, "limit_hit", drill, {
+            "checks": result.get("checks"), "termination": result.get("termination"), "seconds": result.get("seconds"),
+            "attestation": result.get("attestation"), "exit_code": result.get("exit_code"),
+        })
+        self.evidence.put_blob(task_id, str(result.get("output_tail") or "").encode())
+        self.store.update_task(task_id, outcome=outcome, outcome_rule=rule, status=DONE)
+        self.store.add_event(task_id, "outcome", outcome, {"rule": rule})
+        self.store.add_event(task_id, "status_changed", DONE)
+        self.evidence.write_manifest(task_id, build_manifest(
+            task_id=task_id, ticket=task["ticket"], repository=self.settings.target_repo, commit=self.settings.target_commit,
+            script_sha256=None, replays=[result], events=self.store.events_after(task_id, -1), outcome=outcome, rule=rule, issue_url=None,
+        ))
+
     def resume(self, task_id: str, decision: str, note: str | None) -> None:
         # A decision is never dropped for lack of queue room, because it blocks until there is some.
         self.store.add_event(task_id, "status_changed", "publishing")
@@ -69,7 +106,10 @@ class Worker:
         while True:
             task_id, decision = self.queue.get()
             try:
-                self._run(task_id, decision)
+                if decision and "drill" in decision:
+                    self._run_drill(task_id, decision["drill"])
+                else:
+                    self._run(task_id, decision)
             except Exception as error:
                 self._fail(task_id, f"{type(error).__name__}: {str(error)[:300]}")
 

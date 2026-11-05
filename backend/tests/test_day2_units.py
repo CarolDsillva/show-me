@@ -219,3 +219,24 @@ def test_simplify_trail_keeps_different_steps():
     fill = act.NextAction(action="fill", selector="a", value="x")
     other = act.NextAction(action="fill", selector="a", value="y")
     assert len(simplify_trail([fill, other])) == 2
+
+
+def test_simplify_trail_drops_wandering_link_clicks_before_the_last_goto():
+    def goto(path):
+        return act.NextAction(action="goto", path=path)
+
+    def click(target):
+        return act.NextAction(action="click", selector=f'a[href="{target}"]')
+
+    trail = [goto("/tags"), click("/a"), goto("/tags"), click("/b"), goto("/tags"), click("/a")]
+    assert [(s.action, s.path, s.selector) for s in simplify_trail(trail)] == [
+        ("goto", "/tags", None), ("click", None, 'a[href="/a"]'),
+    ]
+
+
+def test_simplify_trail_keeps_steps_that_may_change_data():
+    fill = act.NextAction(action="fill", selector="#a", value="x")
+    button = act.NextAction(action="click", selector="button.delete")
+    goto = act.NextAction(action="goto", path="/tags")
+    assert len(simplify_trail([fill, goto])) == 2
+    assert len(simplify_trail([button, goto])) == 2

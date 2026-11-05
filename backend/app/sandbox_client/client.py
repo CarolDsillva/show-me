@@ -55,6 +55,9 @@ class SandboxClient:
         body = {"run_key": run_key, "profile": PROFILE, "target_ref": "baseline", "kind": "regression"}
         return self._run(body | ({"patch": patch} if patch else {}))
 
+    def drill(self, run_key: str, drill: str) -> dict:
+        return self._run({"run_key": run_key, "profile": PROFILE, "target_ref": "baseline", "kind": "drill", "drill": drill})
+
     def _run(self, body: dict) -> dict:
         response = self._post("/v1/runs", body)
         if response.status_code != 200:

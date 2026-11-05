@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import dataclasses
 import datetime as dt
+import re
 import sqlite3
 from typing import TypedDict
 
@@ -105,6 +106,9 @@ class Nodes:
         """Move hostile output into opaque evidence, so only hashes stay in the state."""
         for artifact in run.get("artifacts") or []:
             self.deps.evidence.put_blob(state["task_id"], base64.b64decode(artifact.pop("content_b64")))
+        # The script prints this. It is checked against the sandbox's own address, and capped.
+        match = re.search(r"^FINAL URL: (http://127\.0\.0\.1:9090/[^\s]{0,400})$", run.get("stdout") or "", re.MULTILINE)
+        run["final_url"] = match.group(1) if match else None
         for stream in ("stdout", "stderr"):
             text = run.pop(stream, "")
             run[f"{stream}_blob"] = self.deps.evidence.put_blob(state["task_id"], text.encode())
@@ -264,7 +268,7 @@ class Nodes:
             "stage": stage, "number": number, "exit_code": replay.get("exit_code"),
             "termination": replay.get("termination"), "symptom_observed": replay.get("symptom_observed"),
             "destroyed": (replay.get("destruction") or {}).get("destroyed"), "seconds": replay.get("seconds"),
-            "screenshot_sha256": shot,
+            "screenshot_sha256": shot, "final_url": replay.get("final_url"),
         })
 
     def route_after_confirm(self, state: State) -> str:
