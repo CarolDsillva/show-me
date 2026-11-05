@@ -84,10 +84,11 @@ class Store:
             ).fetchone()
         return int(row["total"])
 
-    def count_recent_from(self, client_ip: str, since_iso: str) -> int:
+    def count_recent_from(self, client_ip: str, since_iso: str, kind: str = "ticket") -> int:
         with self._connect() as connection:
             row = connection.execute(
-                "SELECT COUNT(*) AS total FROM tasks WHERE client_ip = ? AND created_at >= ?", (client_ip, since_iso)
+                "SELECT COUNT(*) AS total FROM tasks WHERE client_ip = ? AND created_at >= ? AND kind = ?",
+                (client_ip, since_iso, kind),
             ).fetchone()
         return int(row["total"])
 

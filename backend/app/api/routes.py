@@ -155,7 +155,7 @@ def start_drill(body: DrillRequest, request: Request) -> dict:
     state = request.app.state
     ip = client_ip(request)
     hour_ago = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat()
-    if state.store.count_recent_from(ip, hour_ago) >= state.settings.drills_per_ip_per_hour:
+    if state.store.count_recent_from(ip, hour_ago, kind="drill") >= state.settings.drills_per_ip_per_hour:
         raise HTTPException(429, "Too many runs from this address. Try again later.")
     try:
         task_id = state.worker.submit_drill(body.drill, ip)

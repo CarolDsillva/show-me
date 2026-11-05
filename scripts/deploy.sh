@@ -20,6 +20,19 @@ python scripts/render_api_env.py "$TARGET_COMMIT" "$COMMIT" | ssh "${SSH_OPTS[@]
 ssh "${SSH_OPTS[@]}" "root@${VM_IP}" 'install -d -m 0755 /srv/reprofix/frontend && find /srv/reprofix/frontend -mindepth 1 -delete'
 tar -cf - -C frontend/dist . | ssh "${SSH_OPTS[@]}" "root@${VM_IP}" 'tar -xf - -C /srv/reprofix/frontend --no-same-owner && chmod -R a+rX /srv/reprofix/frontend'
 
+ssh "${SSH_OPTS[@]}" "root@${VM_IP}" bash -s <<'EOF'
+set -euo pipefail
+if [ -d /opt/reprofix/backend ]; then
+  rm -rf /opt/reprofix-prev
+  mkdir -p /opt/reprofix-prev
+  for name in backend sandboxd sandbox-images deploy; do cp -a "/opt/reprofix/$name" "/opt/reprofix-prev/$name"; done
+  cp /etc/reprofix/sandboxd.env /etc/reprofix/sandboxd.env.prev
+  # A tag stops the build below from removing the image the previous deployment needs.
+  previous="$(sed -n 's/^REPROFIX_IMAGE=//p' /etc/reprofix/sandboxd.env)"
+  docker image inspect "$previous" > /dev/null 2>&1 && docker tag "$previous" reprofix/target-linkding:previous
+fi
+EOF
+
 tar -cf - --exclude='__pycache__' --exclude='*.egg-info' --exclude='backend/tests' --exclude='sandboxd/tests' \
     backend sandboxd sandbox-images deploy/reprofix-sandboxd.service deploy/reprofix-api.service deploy/Caddyfile \
   | ssh "${SSH_OPTS[@]}" "root@${VM_IP}" \

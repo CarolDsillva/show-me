@@ -190,3 +190,11 @@ def test_new_pull_request_targets_the_baseline_branch_of_our_fork():
     publisher = Publisher("t", "CarolDsillva/linkding", transport=httpx.MockTransport(handler))
     assert SourceAndPullRequests(publisher, "c" * 40).open_pull_request("a" * 32, "T", "B", {"bookmarks/a.py": "x"}) == "https://x/new"
     assert bodies[0] == "/repos/CarolDsillva/linkding/pulls" and b'"base":"reprofix-baseline"' in bodies[1].replace(b" ", b"")
+
+
+def test_drills_do_not_use_up_the_ticket_limit(tmp_path):
+    store = Store(tmp_path / "a.sqlite3")
+    store.create_task("drill", "x" * 20, "ip", kind="drill")
+    store.create_task("ticket", "x" * 20, "ip")
+    assert store.count_recent_from("ip", "2000") == 1
+    assert store.count_recent_from("ip", "2000", kind="drill") == 1

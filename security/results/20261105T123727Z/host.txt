@@ -1,0 +1,9 @@
+Docker version 29.9.3, build 5457199
+runsc version release-20261102.0
+spec: 1.2.1
+Linux reprofix 6.8.0-147-generic #147-Ubuntu SMP PREEMPT_DYNAMIC Thu Sep 24 11:33:16 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+               total        used        free      shared  buff/cache   available
+Mem:            7935         970        5357           0        1917        6964
+Swap:           8191           1        8190
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda2       150G   26G  118G  19% /
