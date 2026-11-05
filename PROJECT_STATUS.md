@@ -33,7 +33,8 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 | Task | Owner | State | Blocker |
 |---|---|---|---|
 | Restoring the VM from a snapshot hasn't been rehearsed. Rollback covers code and image only | devops-engineer | Open | None |
-| README, submission text, video, slides | architect, team | Not started | None |
+| Video, cover image, public repository, submission | User | Not started | Deadline still unconfirmed. README, `docs/submission.md`, `docs/demo-script.md` and the deck are drafted. Deck: https://claude.ai/artifact/3mkqpLxZVuwzEhK3Xqfrss |
+| Setup on a second clean VM hasn't been tested | devops-engineer | Open | None |
 | Regression set is a 142-test subset, because the full suite takes about 25 minutes under gVisor. Say so in the demo | architect | Open | None |
 | Rerun the JSON check on `glm-5.3` and `qwen3.8-27b` with a higher token limit | agent-orchestrator | Not started | None |
 
