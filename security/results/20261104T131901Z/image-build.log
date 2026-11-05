@@ -1,0 +1,59 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.14kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.13-slim-bookworm@sha256:281d39ff02e3b389401586134ff9e6572954687822a58055ec07a60ded4e0b7f
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [build 1/4] FROM docker.io/library/python:3.13-slim-bookworm@sha256:281d39ff02e3b389401586134ff9e6572954687822a58055ec07a60ded4e0b7f
+#5 resolve docker.io/library/python:3.13-slim-bookworm@sha256:281d39ff02e3b389401586134ff9e6572954687822a58055ec07a60ded4e0b7f 0.0s done
+#5 DONE 0.0s
+
+#6 [frontend 1/4] FROM docker.io/library/node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da
+#6 resolve docker.io/library/node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da 0.0s done
+#6 DONE 0.0s
+
+#7 [frontend 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends ca-certificates curl     && mkdir /src     && curl -fsSL "https://github.com/sissbruecker/linkding/archive/27b7303baf41bb28babc610ac8eaa486e1ddfab5.tar.gz"        | tar -xz --strip-components=1 -C /src
+#7 CACHED
+
+#8 [frontend 3/4] WORKDIR /src
+#8 CACHED
+
+#9 [build 3/4] WORKDIR /opt/linkding
+#9 CACHED
+
+#10 [frontend 4/4] RUN npm ci && npm run build && rm -rf node_modules
+#10 CACHED
+
+#11 [build 2/4] COPY --from=frontend /src /opt/linkding
+#11 CACHED
+
+#12 [build 4/4] RUN pip install --no-cache-dir uv==0.13.7     && uv sync --frozen --no-install-package uwsgi     && playwright install --with-deps chromium     && mkdir -p data/favicons data/previews data/assets     && python manage.py migrate --no-input     && chmod -R a+rX /opt     && rm -rf /root/.cache /var/lib/apt/lists/*
+#12 CACHED
+
+#13 [stage-2 1/2] COPY --from=build / /
+#13 DONE 5.5s
+
+#14 [stage-2 2/2] WORKDIR /opt/linkding
+#14 DONE 0.8s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 79.9s done
+#15 exporting manifest sha256:360b0404630032169ee43e35614d45efde825396b5250442096694e60b4cb680 done
+#15 exporting config sha256:2ed1697a47fb73efb750aacdeebd18551efeb505037517b01e8f2b113371f4b0 done
+#15 exporting attestation manifest sha256:d14e78e87fe5b2833a3a19ad43c86741c2c94ea02a0d7d702468bc0c3a20231d done
+#15 exporting manifest list sha256:ce2eb2c4901d436308f9d8c95daea161f8382b4b923f353b79dcca211bb62cb3 0.0s done
+#15 naming to docker.io/reprofix/target-linkding:spike done
+#15 unpacking to docker.io/reprofix/target-linkding:spike
+#15 unpacking to docker.io/reprofix/target-linkding:spike 10.7s done
+#15 DONE 90.7s

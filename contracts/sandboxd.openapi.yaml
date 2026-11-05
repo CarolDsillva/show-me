@@ -1,0 +1,187 @@
+openapi: 3.1.0
+info:
+  title: sandboxd
+  version: 0.1.0
+  description: >
+    Internal API on a Unix socket, reachable only by the rfsock group. Callers name a
+    profile. They can't set limits, images, mounts or env. Unknown fields are rejected.
+paths:
+  /v1/sessions:
+    post:
+      summary: Start a live browser session with the target app running
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SessionRequest" }
+      responses:
+        "201":
+          description: Attested and ready
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+        "422": { description: Unknown or invalid fields }
+        "503": { description: Sandbox unavailable or attestation failed. Fail closed }
+  /v1/sessions/{session_id}/actions:
+    post:
+      summary: Run one validated browser action
+      parameters:
+        - { name: session_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BrowserAction" }
+      responses:
+        "200":
+          description: Action finished
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActionResult" }
+        "409": { description: Session has ended }
+        "422": { description: Action not allowed }
+  /v1/sessions/{session_id}:
+    delete:
+      summary: End a session, destroy its container and confirm destruction
+      parameters:
+        - { name: session_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Destroyed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Destruction" }
+  /v1/runs:
+    post:
+      summary: Create, execute, collect and destroy in one call
+      description: A run_key that already completed returns its stored result without executing anything.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunRequest" }
+      responses:
+        "200":
+          description: Finished, whatever the outcome inside the sandbox
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RunResult" }
+        "422": { description: Unknown or invalid fields }
+        "503": { description: Sandbox unavailable or attestation failed. Fail closed }
+  /v1/host:
+    get:
+      summary: Host telemetry for the health panel, measured outside any sandbox
+      responses:
+        "200":
+          description: Current values
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HostTelemetry" }
+components:
+  schemas:
+    Sha256:
+      type: string
+      pattern: "^[a-f0-9]{64}$"
+    SessionRequest:
+      type: object
+      additionalProperties: false
+      required: [session_key, profile, target_ref]
+      properties:
+        session_key: { type: string, maxLength: 128 }
+        profile: { type: string, enum: [browser-session] }
+        target_ref: { type: string, enum: [baseline] }
+    Session:
+      type: object
+      required: [session_id, deadline_epoch, attestation]
+      properties:
+        session_id: { type: string }
+        deadline_epoch: { type: integer }
+        attestation: { $ref: "#/components/schemas/Attestation" }
+    BrowserAction:
+      type: object
+      additionalProperties: false
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [goto, click, fill, press, select, wait_for, screenshot, read_text]
+        path: { type: string, maxLength: 512, pattern: "^/", description: Localhost path only. Never a full URL }
+        selector: { type: string, maxLength: 512 }
+        value: { type: string, maxLength: 2000 }
+    ActionResult:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+        error: { type: [string, "null"] }
+        url: { type: string }
+        text: { type: string, description: Untrusted page text, size capped }
+        screenshot_sha256: { $ref: "#/components/schemas/Sha256" }
+    RunRequest:
+      type: object
+      additionalProperties: false
+      required: [run_key, profile, target_ref, kind]
+      properties:
+        run_key: { type: string, maxLength: 128 }
+        profile: { type: string, enum: [browser-session] }
+        target_ref: { type: string, enum: [baseline] }
+        kind: { type: string, enum: [replay, regression, drill] }
+        script: { type: string, maxLength: 200000, description: Frozen Playwright script. Required for replay }
+        script_sha256: { $ref: "#/components/schemas/Sha256" }
+        patch: { type: string, maxLength: 200000, description: Unified diff that already passed policy }
+        drill: { type: string, enum: [secrets, network, delete, disk, fork, memory, loop] }
+    RunResult:
+      type: object
+      required: [run_key, termination, attestation, destruction]
+      properties:
+        run_key: { type: string }
+        exit_code: { type: [integer, "null"] }
+        termination:
+          type: string
+          enum: [exited, timed_out, oom_killed, sandbox_error]
+        symptom_observed: { type: [boolean, "null"], description: From the runner's marker exit code }
+        stdout_sha256: { $ref: "#/components/schemas/Sha256" }
+        stderr_sha256: { $ref: "#/components/schemas/Sha256" }
+        stdout_truncated: { type: boolean }
+        stderr_truncated: { type: boolean }
+        artifacts:
+          type: array
+          items:
+            type: object
+            required: [name, sha256, bytes]
+            properties:
+              name: { type: string }
+              sha256: { $ref: "#/components/schemas/Sha256" }
+              bytes: { type: integer }
+        started_at: { type: string, format: date-time }
+        finished_at: { type: string, format: date-time }
+        attestation: { $ref: "#/components/schemas/Attestation" }
+        destruction: { $ref: "#/components/schemas/Destruction" }
+    Attestation:
+      type: object
+      description: Read with docker inspect before any code loads.
+      required: [runtime, network_mode, read_only, memory_bytes, nano_cpus, pids_limit, image_id, mismatches]
+      properties:
+        runtime: { type: string }
+        network_mode: { type: string }
+        read_only: { type: boolean }
+        memory_bytes: { type: integer }
+        nano_cpus: { type: integer }
+        pids_limit: { type: integer }
+        image_id: { type: string }
+        mismatches: { type: array, items: { type: string } }
+    Destruction:
+      type: object
+      required: [destroyed, confirmed_at]
+      properties:
+        destroyed: { type: boolean, description: True only if inspect returned not found afterwards }
+        confirmed_at: { type: string, format: date-time }
+    HostTelemetry:
+      type: object
+      required: [canary_sha256, disk_free_bytes, load_1m, running_sandboxes, sampled_at]
+      properties:
+        canary_sha256: { $ref: "#/components/schemas/Sha256" }
+        disk_free_bytes: { type: integer }
+        load_1m: { type: number }
+        running_sandboxes: { type: integer }
+        sampled_at: { type: string, format: date-time }

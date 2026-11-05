@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reprofix/events/0.1.0",
+  "title": "Task event",
+  "description": "One event in a task's live stream. seq increases by one per task, so clients can spot gaps and ignore duplicates. Text fields are untrusted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "seq", "at", "type"],
+  "properties": {
+    "task_id": { "type": "string" },
+    "seq": { "type": "integer", "minimum": 0 },
+    "at": { "type": "string", "format": "date-time" },
+    "type": {
+      "enum": [
+        "status_changed",
+        "agent_thought",
+        "browser_action",
+        "sandbox_created",
+        "sandbox_destroyed",
+        "limit_hit",
+        "repro_frozen",
+        "replay_finished",
+        "issue_filed",
+        "patch_proposed",
+        "policy_checked",
+        "patch_verified",
+        "awaiting_approval",
+        "decision_recorded",
+        "pull_request_opened",
+        "llm_call",
+        "outcome",
+        "error"
+      ]
+    },
+    "text": { "type": "string", "maxLength": 4000 },
+    "data": { "type": "object" }
+  }
+}

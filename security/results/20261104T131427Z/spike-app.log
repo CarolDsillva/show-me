@@ -1,0 +1,9 @@
+{
+  "image": "sha256:9dda9ad0cc64567651cf79147809ac71155df392eacc4dbe95724dfe30e79fb7",
+  "steps": {},
+  "ok": false,
+  "error": "AttestationError: Env: GPG_KEY looks like a credential",
+  "container_destroyed": false,
+  "total_seconds": 0.37
+}
+SPIKE FAILED

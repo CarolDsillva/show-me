@@ -1,0 +1,23 @@
+# Secrets. Only deploy/env/*.example belongs in git.
+.secrets/
+.env
+.env.*
+*.pem
+*_ed25519
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Node
+node_modules/
+frontend/dist/
+
+# Local app data
+*.sqlite3
+*.sqlite3-*
+data/

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="12" failures="2" skipped="0" tests="16" time="6.603" timestamp="2026-11-04T13:17:32.982234+00:00" hostname="reprofix"><testcase classname="tests.security.test_containment" name="test_sec01_runtime_is_gvisor_from_the_host" time="1.123"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec02_host_secrets_do_not_reach_the_sandbox" time="0.371"><failure message="sandbox.AttestationError: Env: GPG_KEY looks like a credential">tests/security/test_containment.py:83: in test_sec02_host_secrets_do_not_reach_the_sandbox
+    with sb.Sandbox(image) as box:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</failure></testcase><testcase classname="tests.security.test_containment" name="test_sec03_deletion_cannot_touch_the_image_or_host" time="0.363"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec04_fork_bomb_hits_the_pid_limit_and_the_host_stays_responsive" time="0.365"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec05_memory_bomb_is_stopped_near_the_limit" time="0.370"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec06_infinite_loop_is_killed_from_the_host" time="0.355"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec06b_killing_cannot_be_ignored_by_trapping_signals" time="0.342"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/workspace-512]" time="0.343"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/tmp-256]" time="0.333"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec07b_read_only_root_cannot_be_used_for_disk_fill" time="0.367"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec08_network_is_unreachable" time="0.365"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec10_no_docker_socket_no_capabilities_not_root" time="0.369"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_sec13_api_user_has_no_docker_access" time="0.004" /><testcase classname="tests.security.test_containment" name="test_sec17_nothing_persists_between_sandboxes" time="0.367"><failure message="sandbox.AttestationError: Env: GPG_KEY looks like a credential">tests/security/test_containment.py:255: in test_sec17_nothing_persists_between_sandboxes
+    with sb.Sandbox(image) as first:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</failure></testcase><testcase classname="tests.security.test_containment" name="test_output_flood_is_capped_and_host_memory_is_safe" time="0.336"><error message="failed on setup with &quot;sandbox.AttestationError: Env: GPG_KEY looks like a credential&quot;">tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential</error></testcase><testcase classname="tests.security.test_containment" name="test_failed_attestation_destroys_the_container" time="0.430" /></testsuite></testsuites>

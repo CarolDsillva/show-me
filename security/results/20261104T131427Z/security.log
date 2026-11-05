@@ -1,0 +1,126 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.7.0 -- /opt/reprofix-spike/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /opt/reprofix-spike
+collecting ... collected 16 items
+
+tests/security/test_containment.py::test_sec01_runtime_is_gvisor_from_the_host ERROR [  6%]
+tests/security/test_containment.py::test_sec02_host_secrets_do_not_reach_the_sandbox FAILED [ 12%]
+tests/security/test_containment.py::test_sec03_deletion_cannot_touch_the_image_or_host ERROR [ 18%]
+tests/security/test_containment.py::test_sec04_fork_bomb_hits_the_pid_limit_and_the_host_stays_responsive ERROR [ 25%]
+tests/security/test_containment.py::test_sec05_memory_bomb_is_stopped_near_the_limit ERROR [ 31%]
+tests/security/test_containment.py::test_sec06_infinite_loop_is_killed_from_the_host ERROR [ 37%]
+tests/security/test_containment.py::test_sec06b_killing_cannot_be_ignored_by_trapping_signals ERROR [ 43%]
+tests/security/test_containment.py::test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/workspace-512] ERROR [ 50%]
+tests/security/test_containment.py::test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/tmp-256] ERROR [ 56%]
+tests/security/test_containment.py::test_sec07b_read_only_root_cannot_be_used_for_disk_fill ERROR [ 62%]
+tests/security/test_containment.py::test_sec08_network_is_unreachable ERROR [ 68%]
+tests/security/test_containment.py::test_sec10_no_docker_socket_no_capabilities_not_root ERROR [ 75%]
+tests/security/test_containment.py::test_sec13_api_user_has_no_docker_access PASSED [ 81%]
+tests/security/test_containment.py::test_sec17_nothing_persists_between_sandboxes FAILED [ 87%]
+tests/security/test_containment.py::test_output_flood_is_capped_and_host_memory_is_safe ERROR [ 93%]
+tests/security/test_containment.py::test_failed_attestation_destroys_the_container PASSED [100%]
+
+==================================== ERRORS ====================================
+_________ ERROR at setup of test_sec01_runtime_is_gvisor_from_the_host _________
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+_____ ERROR at setup of test_sec03_deletion_cannot_touch_the_image_or_host _____
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+_ ERROR at setup of test_sec04_fork_bomb_hits_the_pid_limit_and_the_host_stays_responsive _
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+______ ERROR at setup of test_sec05_memory_bomb_is_stopped_near_the_limit ______
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+______ ERROR at setup of test_sec06_infinite_loop_is_killed_from_the_host ______
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+_ ERROR at setup of test_sec06b_killing_cannot_be_ignored_by_trapping_signals __
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+_ ERROR at setup of test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/workspace-512] _
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+_ ERROR at setup of test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/tmp-256] _
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+__ ERROR at setup of test_sec07b_read_only_root_cannot_be_used_for_disk_fill ___
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+_____________ ERROR at setup of test_sec08_network_is_unreachable ______________
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+____ ERROR at setup of test_sec10_no_docker_socket_no_capabilities_not_root ____
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+____ ERROR at setup of test_output_flood_is_capped_and_host_memory_is_safe _____
+tests/security/conftest.py:28: in box
+    with sb.Sandbox(image) as sandbox:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+=================================== FAILURES ===================================
+_______________ test_sec02_host_secrets_do_not_reach_the_sandbox _______________
+tests/security/test_containment.py:83: in test_sec02_host_secrets_do_not_reach_the_sandbox
+    with sb.Sandbox(image) as box:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+________________ test_sec17_nothing_persists_between_sandboxes _________________
+tests/security/test_containment.py:255: in test_sec17_nothing_persists_between_sandboxes
+    with sb.Sandbox(image) as first:
+sandboxd/spike/sandbox.py:217: in __enter__
+    raise AttestationError("; ".join(problems))
+E   sandbox.AttestationError: Env: GPG_KEY looks like a credential
+--------- generated xml file: /opt/reprofix-spike/results/security.xml ---------
+=========================== short test summary info ============================
+FAILED tests/security/test_containment.py::test_sec02_host_secrets_do_not_reach_the_sandbox
+FAILED tests/security/test_containment.py::test_sec17_nothing_persists_between_sandboxes
+ERROR tests/security/test_containment.py::test_sec01_runtime_is_gvisor_from_the_host
+ERROR tests/security/test_containment.py::test_sec03_deletion_cannot_touch_the_image_or_host
+ERROR tests/security/test_containment.py::test_sec04_fork_bomb_hits_the_pid_limit_and_the_host_stays_responsive
+ERROR tests/security/test_containment.py::test_sec05_memory_bomb_is_stopped_near_the_limit
+ERROR tests/security/test_containment.py::test_sec06_infinite_loop_is_killed_from_the_host
+ERROR tests/security/test_containment.py::test_sec06b_killing_cannot_be_ignored_by_trapping_signals
+ERROR tests/security/test_containment.py::test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/workspace-512]
+ERROR tests/security/test_containment.py::test_sec07_disk_fill_stops_at_the_limit_and_host_is_unchanged[/tmp-256]
+ERROR tests/security/test_containment.py::test_sec07b_read_only_root_cannot_be_used_for_disk_fill
+ERROR tests/security/test_containment.py::test_sec08_network_is_unreachable
+ERROR tests/security/test_containment.py::test_sec10_no_docker_socket_no_capabilities_not_root
+ERROR tests/security/test_containment.py::test_output_flood_is_capped_and_host_memory_is_safe
+==================== 2 failed, 2 passed, 12 errors in 6.60s ====================

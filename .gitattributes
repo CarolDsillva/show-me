@@ -1,0 +1,3 @@
+# Everything deployed targets Ubuntu, so keep LF even when working on Windows.
+* text=auto eol=lf
+*.png binary

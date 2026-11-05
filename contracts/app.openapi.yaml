@@ -1,0 +1,180 @@
+openapi: 3.1.0
+info:
+  title: ReproFix API
+  version: 0.1.0
+  description: >
+    Public API behind Caddy. All ticket, page, diff and output text it returns is untrusted,
+    and clients must render it as plain text.
+paths:
+  /api/tasks:
+    post:
+      summary: Submit a customer ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TicketRequest" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "422": { description: Invalid ticket }
+        "429": { description: Rate limit, queue full, or daily budget used up }
+  /api/samples:
+    get:
+      summary: Sample tickets for the demo
+      responses:
+        "200":
+          description: Samples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, title, text]
+                  properties:
+                    id: { type: string }
+                    title: { type: string }
+                    text: { type: string }
+                    hostile: { type: boolean }
+  /api/tasks/{task_id}:
+    get:
+      summary: Current task state
+      parameters:
+        - { name: task_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "404": { description: Unknown task }
+  /api/tasks/{task_id}/events:
+    get:
+      summary: Live event stream. Each event matches contracts/events.schema.json
+      parameters:
+        - { name: task_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Server-sent events
+          content:
+            text/event-stream:
+              schema: { type: string }
+  /api/tasks/{task_id}/decision:
+    post:
+      summary: Developer approves or rejects a verified patch
+      parameters:
+        - { name: task_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Decision" }
+      responses:
+        "200":
+          description: Recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "403": { description: Wrong operator passcode }
+        "409": { description: Task isn't waiting for a decision }
+  /api/tasks/{task_id}/manifest:
+    get:
+      summary: Evidence manifest. Matches contracts/evidence.schema.json
+      parameters:
+        - { name: task_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Manifest
+          content:
+            application/json:
+              schema: { type: object }
+  /api/tasks/{task_id}/artifacts/{sha256}:
+    get:
+      summary: Download one stored artifact as an attachment
+      parameters:
+        - { name: task_id, in: path, required: true, schema: { type: string } }
+        - { name: sha256, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]{64}$" } }
+      responses:
+        "200": { description: Attachment with a safe content type. Screenshots are image/png }
+        "404": { description: Unknown artifact }
+  /api/drills:
+    post:
+      summary: Start one containment drill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [drill]
+              properties:
+                drill: { type: string, enum: [secrets, network, delete, disk, fork, memory, loop] }
+      responses:
+        "202":
+          description: Started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "429": { description: Rate limit or queue full }
+  /api/health/host:
+    get:
+      summary: Host health panel values
+      responses:
+        "200":
+          description: Values measured outside any sandbox
+          content:
+            application/json:
+              schema: { type: object }
+  /api/health:
+    get:
+      summary: Service health and deployed commit
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, commit, fix_phase_enabled]
+                properties:
+                  status: { type: string }
+                  commit: { type: string }
+                  fix_phase_enabled: { type: boolean }
+components:
+  schemas:
+    TicketRequest:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text: { type: string, minLength: 10, maxLength: 2000 }
+    Decision:
+      type: object
+      additionalProperties: false
+      required: [decision, passcode]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        passcode: { type: string, maxLength: 200 }
+        note: { type: string, maxLength: 1000 }
+    Outcome:
+      type: string
+      enum: [PENDING, NOT_REPRODUCED, REPRODUCED, NO_VERIFIED_FIX, FIX_VERIFIED, APPROVED, REJECTED, FAILED]
+    Task:
+      type: object
+      required: [id, kind, status, outcome, created_at]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [ticket, drill] }
+        status: { type: string, enum: [queued, exploring, confirming, filing, patching, verifying, awaiting_approval, publishing, done] }
+        outcome: { $ref: "#/components/schemas/Outcome" }
+        outcome_rule: { type: [string, "null"], description: The deterministic rule that produced the outcome }
+        issue_url: { type: [string, "null"] }
+        pull_request_url: { type: [string, "null"] }
+        diff: { type: [string, "null"], description: Untrusted text }
+        explanation: { type: [string, "null"], description: Model-written and untrusted. Never decides the outcome }
+        created_at: { type: string, format: date-time }

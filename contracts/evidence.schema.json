@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reprofix/evidence/0.1.0",
+  "title": "Evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "ticket_sha256", "target", "sandboxes", "llm_calls", "outcome", "manifest_sha256"],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "image_id", "attestation", "termination", "destroyed", "destroyed_confirmed_at"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["session", "replay", "regression", "drill"] },
+        "applied_patch_sha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "image_id": { "type": "string" },
+        "attestation": { "type": "object" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "exit_code": { "type": ["integer", "null"] },
+        "termination": { "enum": ["exited", "timed_out", "oom_killed", "sandbox_error"] },
+        "symptom_observed": { "type": ["boolean", "null"] },
+        "script_sha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "stdout_sha256": { "$ref": "#/$defs/sha256" },
+        "stderr_sha256": { "$ref": "#/$defs/sha256" },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "sha256", "bytes"],
+            "properties": {
+              "name": { "type": "string" },
+              "sha256": { "$ref": "#/$defs/sha256" },
+              "bytes": { "type": "integer" }
+            }
+          }
+        },
+        "destroyed": { "type": "boolean" },
+        "destroyed_confirmed_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "const": "0.1.0" },
+    "task_id": { "type": "string" },
+    "ticket_sha256": { "$ref": "#/$defs/sha256" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit"],
+      "properties": {
+        "repository": { "type": "string" },
+        "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+      }
+    },
+    "frozen_script_sha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+    "patch": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["sha256", "policy_passed", "policy_reasons"],
+      "properties": {
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "policy_passed": { "type": "boolean" },
+        "policy_reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sandboxes": { "type": "array", "items": { "$ref": "#/$defs/sandbox" } },
+    "llm_calls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["base_url", "model", "prompt_sha256", "response_sha256", "prompt_tokens", "completion_tokens", "at"],
+        "properties": {
+          "base_url": { "const": "https://api.vultrinference.com/v1" },
+          "model": { "type": "string" },
+          "prompt_sha256": { "$ref": "#/$defs/sha256" },
+          "response_sha256": { "$ref": "#/$defs/sha256" },
+          "prompt_tokens": { "type": "integer" },
+          "completion_tokens": { "type": "integer" },
+          "at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "publishing": {
+      "type": "object",
+      "properties": {
+        "issue_url": { "type": ["string", "null"] },
+        "pull_request_url": { "type": ["string", "null"] },
+        "decided_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "rule"],
+      "properties": {
+        "value": { "enum": ["NOT_REPRODUCED", "REPRODUCED", "NO_VERIFIED_FIX", "FIX_VERIFIED", "APPROVED", "REJECTED", "FAILED"] },
+        "rule": { "type": "string" }
+      }
+    },
+    "manifest_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of the canonical JSON of this manifest, with this field removed."
+    }
+  }
+}
