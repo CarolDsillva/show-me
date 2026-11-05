@@ -1,6 +1,6 @@
-# ReproFix
+# Show Me
 
-A customer writes "clicking that number doesn't show my bookmarks". ReproFix reproduces it in a real browser inside a disposable sandbox on Vultr, freezes the steps as a repeatable script, and files the bug with evidence. It then writes a patch and reruns the same frozen script against the patched app in fresh sandboxes. A developer sees the failing run, the passing run and the diff, and nothing opens until they approve.
+A customer writes "clicking that number doesn't show my bookmarks". Show Me reproduces it in a real browser inside a disposable sandbox on Vultr, freezes the steps as a repeatable script, and files the bug with evidence. It then writes a patch and reruns the same frozen script against the patched app in fresh sandboxes. A developer sees the failing run, the passing run and the diff, and nothing opens until they approve.
 
 **Live demo:** https://137-220-32-178.sslip.io. To attack the sandbox yourself, open https://137-220-32-178.sslip.io/?view=drills.
 
@@ -8,7 +8,7 @@ A customer writes "clicking that number doesn't show my bookmarks". ReproFix rep
 
 ## Who it's for
 
-Support and engineering teams at software companies. Vague reports bounce between them for days because nobody can reproduce the problem. Coding agents mostly start from a developer's ticket and end with a diff. ReproFix starts from a customer's words, and ends with before-and-after proof from a script the patch can't change.
+Support and engineering teams at software companies. Vague reports bounce between them for days because nobody can reproduce the problem. Coding agents mostly start from a developer's ticket and end with a diff. Show Me starts from a customer's words, and ends with before-and-after proof from a script the patch can't change.
 
 ## How it executes real tasks
 
@@ -62,6 +62,8 @@ Support and engineering teams at software companies. Vague reports bounce betwee
  |   throwaway test user                                     |
  +-----------------------------------------------------------+
 ```
+
+Internal service and file names, such as `reprofix-api`, come from an earlier working name.
 
 ## Containment
 

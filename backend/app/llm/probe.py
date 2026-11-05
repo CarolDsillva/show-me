@@ -3,7 +3,7 @@
   python backend/app/llm/probe.py [model ...]
 
 Reads VULTR_INFERENCE_API_KEY from the environment or .secrets/vultr.env, and never prints it.
-Makes real, billed calls, kept very small. Tests what ReproFix needs: plain text, tool
+Makes real, billed calls, kept very small. Tests what Show Me needs: plain text, tool
 calling, structured JSON, and reading a screenshot. The listed capabilities aren't proof.
 """
 

@@ -1,10 +1,10 @@
-# ReproFix architecture
+# Show Me architecture
 
 **Status: direction chosen by the user on 2026-11-04.** Gates G1 to G3 passed on the VM on 2026-11-05. See `PROJECT_STATUS.md` for evidence.
 
 ## 1. Product
 
-A customer writes "clicking a tag doesn't show my bookmarks". ReproFix turns that sentence into a reproduced bug, a filed issue, and a patch with proof that it works, waiting for a developer to approve.
+A customer writes "clicking a tag doesn't show my bookmarks". Show Me turns that sentence into a reproduced bug, a filed issue, and a patch with proof that it works, waiting for a developer to approve.
 
 **Who it's for:** SaaS support and engineering teams. Vague reports bounce between them for days because nobody can reproduce the problem.
 

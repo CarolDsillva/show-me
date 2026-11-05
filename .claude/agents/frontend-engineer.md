@@ -1,6 +1,6 @@
 ---
 name: frontend-engineer
-description: Builds the ReproFix web interface, including ticket submission, the live session view, the approval screen, evidence pages, the containment drill and host health panel. Use for changes in frontend/.
+description: Builds the Show Me web interface, including ticket submission, the live session view, the approval screen, evidence pages, the containment drill and host health panel. Use for changes in frontend/.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 skills:
   - agent-rush

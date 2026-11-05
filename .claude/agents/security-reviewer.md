@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: Independent security authority for ReproFix. Owns the threat model, security test suite and hostile demo content, reviews sensitive changes, and can block a release. Use after any change to isolation, secrets, tickets, publishing, prompts, outcome rules, patch policy, rendering of untrusted content, or deployment.
+description: Independent security authority for Show Me. Owns the threat model, security test suite and hostile demo content, reviews sensitive changes, and can block a release. Use after any change to isolation, secrets, tickets, publishing, prompts, outcome rules, patch policy, rendering of untrusted content, or deployment.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch, WebSearch
 skills:
   - sandbox-security

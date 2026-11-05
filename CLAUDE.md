@@ -6,7 +6,7 @@ Start every session by reading `PROJECT_STATUS.md`. The design is in `docs/archi
 
 ## What we are building
 
-Working name **ReproFix**. A customer describes a bug in their own words. An agent reproduces it in a real browser inside a disposable sandbox on Vultr, freezes the steps as a repeatable script, and files the bug with evidence. It then writes a patch, and proves it by rerunning the same frozen script against the patched app in a fresh sandbox. A developer sees the failing run, the passing run and the diff, and approves before any pull request opens.
+**Show Me**, named by the user on 2026-11-05. Internal service and file names still say `reprofix`, which was the working name. A customer describes a bug in their own words. An agent reproduces it in a real browser inside a disposable sandbox on Vultr, freezes the steps as a repeatable script, and files the bug with evidence. It then writes a patch, and proves it by rerunning the same frozen script against the patched app in a fresh sandbox. A developer sees the failing run, the passing run and the diff, and approves before any pull request opens.
 
 **Built-in fallback: ReproBot.** Everything up to filing the bug is a complete product. If the fix phase isn't reliable by gate G3, turn it off with `FIX_PHASE_ENABLED=false` and ship the bug-filing product.
 

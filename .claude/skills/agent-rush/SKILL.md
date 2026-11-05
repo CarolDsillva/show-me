@@ -18,7 +18,7 @@ Facts below come from the event pages, read on 2026-11-03. Sources are in `docs/
 
 ## Which challenge
 
-ReproFix fits Challenge 2, Powering the Future of Work (customer support), and is built to meet Challenge 1's stricter rules too. Challenge 2 requires a Vultr VM backend and public web app. Serverless Inference is optional there, but we use it for everything to keep both open. Whether one project can enter both, and whether one prize list covers both, is **unconfirmed**. Ask on Discord.
+Show Me fits Challenge 2, Powering the Future of Work (customer support), and is built to meet Challenge 1's stricter rules too. Challenge 2 requires a Vultr VM backend and public web app. Serverless Inference is optional there, but we use it for everything to keep both open. Whether one project can enter both, and whether one prize list covers both, is **unconfirmed**. Ask on Discord.
 
 ## Challenge 1: Blast Radius Zero
 

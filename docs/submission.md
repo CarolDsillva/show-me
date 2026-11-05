@@ -4,7 +4,7 @@ Draft. Check it against the actual form, which takes priority. Nothing here has 
 
 ## Title (50 characters at most)
 
-ReproFix: from a customer's words to a proven fix
+Show Me: from a customer's words to a proven fix
 
 ## Short summary (255 characters at most)
 
@@ -12,7 +12,7 @@ A customer describes a bug. An agent reproduces it in a real browser in a dispos
 
 ## Long description
 
-"It's broken" tickets bounce between support and engineering for days, because nobody can reproduce the problem. ReproFix starts where that handoff starts: a customer's own words.
+"It's broken" tickets bounce between support and engineering for days, because nobody can reproduce the problem. Show Me starts where that handoff starts: a customer's own words.
 
 An agent running on Vultr Serverless Inference explores the real app in Chromium, inside a disposable gVisor sandbox with no network. When it sees the bug, code freezes its steps into a hashed Playwright script and replays it in three fresh sandboxes. Only then does a bug report go to GitHub, with the steps, a screenshot and the script. The model then proposes a patch. The same frozen script must pass on the patched code three times, with no new test failures. A developer sees the failing run, the passing run and the diff, and a pull request opens only when they approve.
 

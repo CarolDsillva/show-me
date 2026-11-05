@@ -1,6 +1,6 @@
 ---
 name: agent-orchestrator
-description: Builds the LangGraph agent, the Vultr Serverless Inference gateway, prompts, deterministic outcome rules and patch policy for ReproFix. Use for changes to backend/app/agent/ or backend/app/llm/, model selection, prompt injection defenses, the exploration loop and the patch loop.
+description: Builds the LangGraph agent, the Vultr Serverless Inference gateway, prompts, deterministic outcome rules and patch policy for Show Me. Use for changes to backend/app/agent/ or backend/app/llm/, model selection, prompt injection defenses, the exploration loop and the patch loop.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 skills:
   - agent-rush

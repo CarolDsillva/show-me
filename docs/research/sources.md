@@ -59,4 +59,4 @@ Don't copy code. Plagiarism means disqualification. Summaries came from each REA
 |---|---|
 | [linkding](https://github.com/sissbruecker/linkding) | Target app: MIT license, Django and SQLite, Playwright tests, real fixes such as PR #1452 |
 | [Live Vultr plans](https://api.vultr.com/v2/plans) | `vc2-4c-8gb` at $40 a month, available in `sea` |
-| [Vultr port 25 policy](https://docs.vultr.com/support/products/compute/why-is-smtp-blocked) | Outbound email is blocked by default. ReproFix sends no email |
+| [Vultr port 25 policy](https://docs.vultr.com/support/products/compute/why-is-smtp-blocked) | Outbound email is blocked by default. Show Me sends no email |

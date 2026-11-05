@@ -1,6 +1,6 @@
 ---
 name: sandbox-engineer
-description: Builds sandboxd and sandbox images for ReproFix, including Docker with gVisor, resource limits, session and run lifecycles, attestation, the reaper, the browser driver and output capture. Use for anything about how untrusted code is executed or contained.
+description: Builds sandboxd and sandbox images for Show Me, including Docker with gVisor, resource limits, session and run lifecycles, attestation, the reaper, the browser driver and output capture. Use for anything about how untrusted code is executed or contained.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 skills:
   - sandbox-security

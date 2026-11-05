@@ -57,7 +57,7 @@ export function App() {
             go("");
           }}
         >
-          ReproFix
+          Show Me
         </a>
         <nav aria-label="Main">
           <a

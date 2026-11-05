@@ -1,6 +1,6 @@
 ---
 name: devops-engineer
-description: Provisions and operates the ReproFix deployment on Vultr, including the VM, firewall, Docker and gVisor install, service users, systemd hardening, Caddy TLS, CI, deploy, smoke tests, snapshots and rollback. Use for changes in deploy/, scripts/ or .github/workflows/.
+description: Provisions and operates the Show Me deployment on Vultr, including the VM, firewall, Docker and gVisor install, service users, systemd hardening, Caddy TLS, CI, deploy, smoke tests, snapshots and rollback. Use for changes in deploy/, scripts/ or .github/workflows/.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 skills:
   - vultr-deployment

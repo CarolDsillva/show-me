@@ -25,5 +25,5 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="ReproFix API", version="0.2.0", docs_url=None, redoc_url=None, lifespan=lifespan)
+app = FastAPI(title="Show Me API", version="0.2.0", docs_url=None, redoc_url=None, lifespan=lifespan)
 app.include_router(router)

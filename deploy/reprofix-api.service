@@ -1,5 +1,5 @@
 [Unit]
-Description=ReproFix API and agent. Holds the keys, and has no Docker access
+Description=Show Me API and agent. Holds the keys, and has no Docker access
 After=network-online.target reprofix-sandboxd.service
 Wants=network-online.target
 Requires=reprofix-sandboxd.service

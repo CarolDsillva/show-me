@@ -302,7 +302,7 @@ class Nodes:
             ticket=state["ticket"], summary=summary, script=script, script_sha256=state["script_sha256"],
             replays=state["replays"], rule=state["rule"], repository=self.deps.settings.target_repo,
             commit=self.deps.settings.target_commit, screenshot_url=screenshot_url,
-            manifest_note=f"Task ID: `{state['task_id']}`. The evidence manifest is available from the ReproFix server.",
+            manifest_note=f"Task ID: `{state['task_id']}`. The evidence manifest is available from the Show Me server.",
         )
         url = self.deps.publisher.file_issue(state["task_id"], title, body)
         self.deps.store.update_task(state["task_id"], issue_url=url, explanation=summary)
@@ -455,7 +455,7 @@ class Nodes:
         if not patch.passed or patch.sha256 != state["patch_sha256"]:
             return {"failure": "The approved patch no longer matches what was verified"}
         url = self.deps.source.open_pull_request(
-            state["task_id"], f"Fix reproduced bug, ReproFix task {state['task_id'][:8]}",
+            state["task_id"], f"Fix reproduced bug, Show Me task {state['task_id'][:8]}",
             pull_request_body(
                 issue_url=state.get("issue_url"), explanation=state.get("explanation") or "", rule=state["rule"],
                 script_sha256=state["script_sha256"], patch_sha256=patch.sha256,

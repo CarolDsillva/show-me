@@ -85,7 +85,7 @@ class Publisher:
         if existing.status_code == 200:
             return url
         response = self.http.put(self._repo(f"/contents/{path}"), json={
-            "message": f"Evidence for ReproFix task {task_id}",
+            "message": f"Evidence for Show Me task {task_id}",
             "content": base64.b64encode(png).decode(),
             "branch": EVIDENCE_BRANCH,
         })
@@ -154,7 +154,7 @@ class SourceAndPullRequests:
             current = self.http.get(self.publisher._repo(f"/contents/{path}"), params={"ref": branch})
             current.raise_for_status()
             update = self.http.put(self.publisher._repo(f"/contents/{path}"), json={
-                "message": f"ReproFix patch for task {task_id}",
+                "message": f"Show Me patch for task {task_id}",
                 "content": base64.b64encode(content.encode()).decode(),
                 "sha": current.json()["sha"],
                 "branch": branch,
@@ -169,7 +169,7 @@ class SourceAndPullRequests:
 
 def pull_request_body(*, issue_url: str | None, explanation: str, rule: str, script_sha256: str, patch_sha256: str) -> str:
     issue = f"Bug report: {issue_url}\n\n" if issue_url else ""
-    return f"""> Opened by ReproFix after a developer approved it.
+    return f"""> Opened by Show Me after a developer approved it.
 
 {issue}## Result
 
@@ -193,7 +193,7 @@ def issue_body(
         for i, r in enumerate(replays, start=1)
     )
     picture = f"\n## Failing state\n\n![Screenshot from the failing replay]({screenshot_url})\n" if screenshot_url else ""
-    return f"""> Filed automatically by ReproFix. Reproduced in a real browser inside a disposable sandbox.
+    return f"""> Filed automatically by Show Me. Reproduced in a real browser inside a disposable sandbox.
 
 ## Result
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=ReproFix sandboxd. The only service that can reach Docker, and it holds no secrets
+Description=Show Me sandboxd. The only service that can reach Docker, and it holds no secrets
 After=docker.service
 Requires=docker.service
 

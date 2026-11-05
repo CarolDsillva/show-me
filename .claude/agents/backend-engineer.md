@@ -1,6 +1,6 @@
 ---
 name: backend-engineer
-description: Builds the FastAPI control plane for ReproFix, including the API, persistence, ticket intake, GitHub publishing to our fork, evidence store, rate limits, budgets and the sandboxd client. Use for changes in backend/ other than the agent graph and LLM gateway.
+description: Builds the FastAPI control plane for Show Me, including the API, persistence, ticket intake, GitHub publishing to our fork, evidence store, rate limits, budgets and the sandboxd client. Use for changes in backend/ other than the agent graph and LLM gateway.
 tools: Read, Grep, Glob, Edit, Write, Bash, WebFetch
 skills:
   - agent-rush

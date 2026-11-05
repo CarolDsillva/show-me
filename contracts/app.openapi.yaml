@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: ReproFix API
+  title: Show Me API
   version: 0.2.0
   description: >
     Public API behind Caddy. All ticket, page, diff and output text it returns is untrusted,

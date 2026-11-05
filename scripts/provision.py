@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Provision the ReproFix VM on Vultr. Standard library only.
+"""Provision the Show Me VM on Vultr. Standard library only.
 
   python scripts/provision.py --dry-run   Check the plan and show what would happen
   python scripts/provision.py --yes       Create anything missing (this costs money)

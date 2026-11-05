@@ -4,7 +4,7 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 
 **Last updated:** 2026-11-05
 **Phase:** Day 3 in progress. Public URL: https://137-220-32-178.sslip.io
-**Product:** ReproFix (working name), with ReproBot as the fallback. Chosen by the user on 2026-11-04
+**Product:** Show Me, with ReproBot as the fallback. Direction chosen on 2026-11-04, and named on 2026-11-05. Internal names still say `reprofix`
 **Blocked on:** Nothing. The submission deadline is still unconfirmed
 
 ## Decisions needed from the user
@@ -15,7 +15,7 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 | 2 | First commit, and a repository on GitHub | Commit locally now, public near submission | Local commit approved 2026-11-05, with no Claude author line. GitHub repository still open |
 | 3 | Public fork of linkding on the user's GitHub account, needed for Day 2 | Approve | Approved and created, 2026-11-05: https://github.com/CarolDsillva/linkding |
 | 5 | Turn on Issues on the fork. GitHub leaves them off on forks, and the product files bugs there | Approve | Approved and done, 2026-11-05 |
-| 4 | Product name | ReproFix is a placeholder | Open |
+| 4 | Product name | User chose Show Me | Decided, 2026-11-05 |
 
 ## Gates
 
