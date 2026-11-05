@@ -10,7 +10,7 @@ import sys
 
 import pytest
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "sandboxd" / "spike"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "sandboxd"))
 
 import sandbox as sb  # noqa: E402
 

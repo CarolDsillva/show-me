@@ -25,7 +25,7 @@ set -uo pipefail
 cd ${REMOTE}
 mkdir -p results
 
-docker build -t reprofix/target-linkding:spike sandbox-images/target-linkding > results/image-build.log 2>&1
+docker build -t reprofix/target-linkding:baseline sandbox-images/target-linkding > results/image-build.log 2>&1
 build_status=\$?
 tail -5 results/image-build.log
 if [ "\$build_status" -ne 0 ]; then
@@ -33,7 +33,7 @@ if [ "\$build_status" -ne 0 ]; then
   chown -R rfsandboxd: ${REMOTE}
   exit 1
 fi
-IMAGE="\$(docker inspect --format '{{.Id}}' reprofix/target-linkding:spike)"
+IMAGE="\$(docker inspect --format '{{.Id}}' reprofix/target-linkding:baseline)"
 echo "Image: \$IMAGE"
 echo "\$IMAGE" > results/image-id.txt
 
@@ -41,12 +41,12 @@ python3 -m venv .venv
 .venv/bin/pip install --quiet pytest==9.0.3
 chown -R rfsandboxd: ${REMOTE}
 
-sudo -u rfsandboxd -H env REPROFIX_IMAGE="\$IMAGE" PYTHONPATH=sandboxd/spike \
+sudo -u rfsandboxd -H env REPROFIX_IMAGE="\$IMAGE" PYTHONPATH=sandboxd \
   .venv/bin/python -m pytest tests/security -v --tb=short --junitxml=results/security.xml \
   2>&1 | tee results/security.log
 security_status=\$?
 
-sudo -u rfsandboxd -H env REPROFIX_IMAGE="\$IMAGE" PYTHONPATH=sandboxd/spike \
+sudo -u rfsandboxd -H env REPROFIX_IMAGE="\$IMAGE" PYTHONPATH=sandboxd \
   .venv/bin/python sandboxd/spike/spike_app.py results \
   2>&1 | tee results/spike-app.log
 spike_status=\$?

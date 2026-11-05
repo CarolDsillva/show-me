@@ -3,9 +3,9 @@
 Owner: architect. Update at the end of every work session and at every gate. To reuse this file, keep the headings and replace the contents. Record facts with evidence, not intentions.
 
 **Last updated:** 2026-11-05
-**Phase:** Day 1 complete, Day 2 next
+**Phase:** Day 2 in progress. Public URL: https://137-220-32-178.sslip.io
 **Product:** ReproFix (working name), with ReproBot as the fallback. Chosen by the user on 2026-11-04
-**Blocked on:** Public linkding fork needs the user's approval
+**Blocked on:** Nothing
 
 ## Decisions needed from the user
 
@@ -13,7 +13,8 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 |---|---|---|---|
 | 1 | Provision `vc2-4c-8gb` in Seattle, $40 a month list price | Approve | Approved and created, 2026-11-04 |
 | 2 | First commit, and a repository on GitHub | Commit locally now, public near submission | Local commit approved 2026-11-05, with no Claude author line. GitHub repository still open |
-| 3 | Public fork of linkding on the user's GitHub account, needed for Day 2 | Approve | Open |
+| 3 | Public fork of linkding on the user's GitHub account, needed for Day 2 | Approve | Approved and created, 2026-11-05: https://github.com/CarolDsillva/linkding |
+| 5 | Turn on Issues on the fork. GitHub leaves them off on forks, and the product files bugs there | Approve | Approved and done, 2026-11-05 |
 | 4 | Product name | ReproFix is a placeholder | Open |
 
 ## Gates
@@ -22,7 +23,7 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 |---|---|---|---|
 | G0 Direction chosen | 4 Nov | Passed | User's decision, 2026-11-04 |
 | G1 Sandbox proven on a real VM, one real inference call | Day 1 | Passed 2026-11-05 | `security/results/20261105T064640Z`: 16 of 16 security tests, spike passed, 0 leftover containers. Model probe passed live |
-| G2 Typed ticket produces a real filed issue | Day 2 | Not started | |
+| G2 Typed ticket produces a real filed issue | Day 2 | Passed 2026-11-05 | https://github.com/CarolDsillva/linkding/issues/1 from task `671d871fb8624205bb259360a8a8ebc4`: 3 of 3 replays exit 42 under `runsc`, 4 containers destroyed, 0 left, manifest matches the contract. One successful run, not yet an eval |
 | G3 Full flow on the public URL, and fix-phase decision | Day 3 | Not started | |
 | G4 Feature freeze: security suite and evals pass | Day 4 | Not started | |
 | G5 Submitted on lablab.ai | Day 5 | Not started | |
@@ -31,7 +32,10 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 
 | Task | Owner | State | Blocker |
 |---|---|---|---|
-| Sandboxd: treat a dead sandbox as `sandbox_error` (see Day 1 findings) | sandbox-engineer | Not started | None |
+| Update `contracts/` for what Day 2 changed: `initial` and screenshots on sessions, `ticket` on tasks, replay stdout and artifact content | architect | Not started | None |
+| Check the frozen script passes on fixed code. Not yet shown, so a wrong expectation could count as reproduced | agent-orchestrator | Day 3 | Patch runs |
+| Reaper test (SEC-11), and security tests against the live `sandboxd` | security-reviewer | Not started | None |
+| Sandboxd: treat a dead sandbox as `sandbox_error` (see Day 1 findings) | sandbox-engineer | Written, unit tested only | None |
 | Rerun the JSON check on `glm-5.3` and `qwen3.8-27b` with a higher token limit | agent-orchestrator | Not started | None |
 
 ## Test results
@@ -40,7 +44,7 @@ Record the latest real run only. Leave a row at "not run" rather than estimating
 
 | Suite | Commit | Where it ran | Result | Log |
 |---|---|---|---|---|
-| Unit: `sandboxd/tests` | Uncommitted | This PC | 9 passed. Says nothing about containment | Local run, 2026-11-04 |
+| Unit: `backend/tests`, `sandboxd/tests` | Uncommitted | This PC | 54 passed. Uses test doubles, so it says nothing about containment | Local run, 2026-11-05 |
 | Security: `tests/security` | Uncommitted at run time | Vultr VM | 16 passed | `security/results/20261105T064640Z/security.log` |
 | Spike: linkding and Chromium under gVisor | Uncommitted at run time | Vultr VM | Passed: login, screenshot, external navigation blocked, container destroyed, 19 s in total | `security/results/20261105T064640Z/spike-app.json` |
 | Model probe | Uncommitted at run time | This PC, live Vultr Inference, one call per check | `qwen3.8-flash-next` passed all 4. `glm-5.3` and `qwen3.8-27b` passed 3 and failed JSON with an empty answer. Cause unconfirmed | Console output, 2026-11-04 |
@@ -86,7 +90,7 @@ Also checked locally: Python compiles, shell scripts pass `bash -n`, OpenAPI and
 | VM | `reprofix-control-plane`, `137.220.32.178`, `vc2-4c-8gb`, `sea`. Docker 29.9.3, gVisor `release-20261102.0`, Caddy 2.11.8 |
 | Deployed commit | None |
 | Last smoke test | None |
-| Vultr credit remaining | $198.92 on 2026-11-05 |
+| Vultr credit remaining | $198.75 on 2026-11-05 |
 
 ## Session log
 
@@ -95,3 +99,5 @@ Also checked locally: Python compiles, shell scripts pass `bash -n`, OpenAPI and
 | 2026-11-03 | Read the rules and Vultr docs. Wrote the engineering system for an earlier idea. Ran product ideation for the Future of Work track | User chooses a direction |
 | 2026-11-04 | Chose ReproFix and linkding. Rewrote docs. Initialized git, wrote contracts, provisioning and host setup scripts, sandbox image, spike, security tests, threat model and model probe. No commits | User adds keys, then provision and run the spike |
 | 2026-11-05 | Created the VM, installed the host, ran the model probe. Flattened the image env, rewrote SEC-04 after diagnosing it. G1 passed | User approves the fork, then start Day 2 |
+| 2026-11-05 | Fork and `reprofix-baseline` branch (`d0ee9f5`, fix #1452 reverted). Built `sandboxd`, API, agent, publisher, frontend, deploy. Real ticket reproduced 3 of 3 on the public URL. Inference key had to be copied a second time, because the saved one stopped working for an unknown reason | User adds the GitHub token, then file the first real issue |
+| 2026-11-05 | User added the token. First real issue filed on the fork, and G2 passed | Commit Day 2, then Day 3: patch runs and the fix phase decision |

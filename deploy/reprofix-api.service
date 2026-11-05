@@ -1,0 +1,23 @@
+[Unit]
+Description=ReproFix API and agent. Holds the keys, and has no Docker access
+After=network-online.target reprofix-sandboxd.service
+Wants=network-online.target
+Requires=reprofix-sandboxd.service
+
+[Service]
+User=rfapi
+Group=rfapi
+SupplementaryGroups=rfsock
+EnvironmentFile=/etc/reprofix/api.env
+WorkingDirectory=/opt/reprofix/backend
+ExecStart=/opt/reprofix/venv-api/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-server-header --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/reprofix
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+[Unit]
+Description=ReproFix sandboxd. The only service that can reach Docker, and it holds no secrets
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=rfsandboxd
+# The socket's directory is rfsandboxd:rfsock 0750, so only rfsock members can reach it.
+Group=rfsock
+SupplementaryGroups=docker
+RuntimeDirectory=reprofix
+RuntimeDirectoryMode=0750
+StateDirectory=reprofix-sandboxd
+StateDirectoryMode=0700
+EnvironmentFile=/etc/reprofix/sandboxd.env
+Environment=HOME=/var/lib/reprofix-sandboxd
+Environment=PATH=/usr/bin:/bin
+WorkingDirectory=/opt/reprofix/sandboxd
+ExecStart=/opt/reprofix/venv-sandboxd/bin/uvicorn service:app --uds /run/reprofix/sandboxd.sock --no-server-header
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

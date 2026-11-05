@@ -186,6 +186,26 @@ def exists(run_id: str) -> bool:
     return _docker("inspect", container_name(run_id)).returncode == 0
 
 
+def overdue_containers(now_epoch: float) -> list[str]:
+    """Names of our containers past their deadline. A missing or bad label counts as overdue."""
+    overdue = []
+    for name in labeled_containers():
+        result = _docker("inspect", "--format", f'{{{{index .Config.Labels "{DEADLINE_LABEL}"}}}}', name)
+        try:
+            deadline = int(result.stdout.decode().strip())
+        except ValueError:
+            deadline = 0
+        if deadline < now_epoch:
+            overdue.append(name)
+    return overdue
+
+
+def remove_container(name: str) -> bool:
+    """Force-remove by name and confirm it is gone."""
+    _docker("rm", "--force", "--volumes", name)
+    return _docker("inspect", name).returncode != 0
+
+
 def labeled_containers() -> list[str]:
     result = _docker("ps", "-a", "--filter", f"label={RUN_LABEL}", "--format", "{{.Names}}")
     return result.stdout.decode().split()
@@ -287,6 +307,19 @@ class Sandbox:
             stdout=out, stderr=err,
             stdout_truncated=out_truncated, stderr_truncated=err_truncated,
             timed_out=timed_out, duration_s=time.monotonic() - started,
+        )
+
+    def is_alive(self) -> bool:
+        """True only if a command really runs. Docker keeps reporting "running" after
+        gVisor itself has died, so `docker inspect` can't answer this."""
+        result = self.exec(["true"], timeout=20)
+        return result.exit_code == 0
+
+    def open_stream(self, command: list[str]) -> subprocess.Popen:
+        """A long-lived command with stdin and stdout pipes. The caller caps every read."""
+        return subprocess.Popen(
+            ["docker", "exec", "-i", self.name, *command],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=client_env(),
         )
 
     def _force_remove(self) -> None:

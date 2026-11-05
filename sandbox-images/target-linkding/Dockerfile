@@ -1,13 +1,13 @@
-# Sandbox image: linkding at a pinned commit, plus Chromium through Playwright.
+# Sandbox image: our linkding baseline (upstream 27b7303 with fix #1452 reverted), plus Chromium.
 # Holds no secrets. The running container has no network, so everything it needs
 # has to be here. Base images are pinned by digest.
 
 FROM node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS frontend
-ARG LINKDING_SHA=27b7303baf41bb28babc610ac8eaa486e1ddfab5
+ARG LINKDING_SHA=d0ee9f5100ff4f1b377853efd258cc471a59a76e
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && mkdir /src \
-    && curl -fsSL "https://github.com/sissbruecker/linkding/archive/${LINKDING_SHA}.tar.gz" \
+    && curl -fsSL "https://github.com/CarolDsillva/linkding/archive/${LINKDING_SHA}.tar.gz" \
        | tar -xz --strip-components=1 -C /src
 WORKDIR /src
 RUN npm ci && npm run build && rm -rf node_modules
