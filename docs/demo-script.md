@@ -16,15 +16,15 @@ Target about 3:30, and the limit is 5 minutes and 300MB. Record the real public 
 |---|---|---|
 | 0:00 | Front page | "Support gets a ticket that says 'it's broken'. Engineering can't reproduce it, so it bounces for days. What if that ticket arrived with proof?" |
 | 0:20 | Click the sample, then "Reproduce this bug" | "This is one customer's words. It runs against linkding, a real open-source app, with a real past bug put back in." |
-| 0:35 | Live view: browser, steps, thoughts | "An agent on Vultr Serverless Inference drives real Chromium, in a disposable gVisor sandbox on a Vultr VM with no network. It reads the page and picks one action at a time, and code checks each action." |
+| 0:35 | Live view: the blue "happening now" bar, progress on the left, browser and steps | "An agent on Vultr Serverless Inference drives real Chromium, in a disposable gVisor sandbox on a Vultr VM with no network. It reads the page and picks one action at a time, and code checks each action." |
 | 1:05 | Replays filling in | Mark the cut. "Now code freezes those steps into a script and hashes it. It replays in three fresh sandboxes, and must show the bug every time. The model's opinion doesn't count." |
 | 1:20 | The filed issue on GitHub | "That's a real issue, with the customer's words, a screenshot and the exact script." |
 | 1:35 | Fix verified, before and after | Mark the cut. "The model proposed this one-line change. The same frozen script failed on the current code three times, and passes on the patch three times. Existing tests still pass. A patch can't cheat by changing its own test." |
-| 2:05 | Diff, then the passcode box and Approve | "But a passing script doesn't mean the patch is good, so a person decides. Nothing has been opened yet." Click Approve. |
+| 2:05 | The diff, then scroll up to "Your decision" and click Approve | "But a passing script doesn't mean the patch is good, so a person decides. Nothing has been opened yet." Click Approve. |
 | 2:20 | The pull request on the fork | "Now there's a real pull request, on our own fork only." |
 | 2:35 | Attack page, host panel | "Now the hard part. What if the AI's code is hostile? These are real attacks, each in a fresh sandbox." |
-| 2:45 | Click Steal secrets, Phone home, Fork bomb, Never stop | "The secret hunt finds only a planted decoy. The network is unreachable. The kernel refuses the fork bomb, and the loop is killed from outside at 15 seconds." |
-| 3:10 | Expand checks, host panel steady | "These results are measured from the host, not reported by the sandbox. The API kept responding, the host's file hash is unchanged, and no sandboxes are left. We also remove each protection in testing, to prove these checks can fail." |
+| 2:45 | Click "Run all 7 attacks", which takes about 40 seconds. Mark any cut | "The secret hunt finds only a planted decoy. The network is unreachable. The kernel refuses the fork bomb, and the loop is killed from outside at 15 seconds." |
+| 3:10 | "7 of 7 contained", open one set of checks, host panel steady | "These results are measured from the host, not reported by the sandbox. The API kept responding, the host's file hash is unchanged, and no sandboxes are left. We also remove each protection in testing, to prove these checks can fail." |
 | 3:25 | Architecture slide | "One Vultr VM runs the control plane. The API holds the keys but can't reach Docker. `sandboxd` can reach Docker but holds no secrets." |
 | 3:40 | Honest limits slide | "What this doesn't prove: one symptom gone isn't a good patch. Two of our three demo bugs got verified fixes on every repeat run, and the third never did. The system says so and leaves the issue standing. It's a small sample." |
 | 3:55 | Close | "Next: helpdesk integration, and any repository. A vague ticket becomes a proven patch, and a person stays in charge." |

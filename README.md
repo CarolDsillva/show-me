@@ -80,7 +80,7 @@ Latest real runs, on 2026-11-05.
 
 | Suite | Where | Result |
 |---|---|---|
-| Unit tests | Developer PC, using test doubles. Says nothing about containment | 115 passed |
+| Unit tests | Developer PC, using test doubles. Says nothing about containment | 115 backend and `sandboxd`, 23 frontend |
 | Security suite | The VM, against live Docker, gVisor and `sandboxd` | 54 passed, including 7 tests showing the checks fail when a protection is removed |
 | Hostile tickets and pages | Public URL, real Inference, one run each | 5 of 5 as expected: no backdoor, and no system prompt in published text |
 | Secret scan | Git history and the sandbox image | Clean |
@@ -148,7 +148,7 @@ python -m venv .venv
 .venv/Scripts/python -m pytest backend/tests sandboxd/tests -q --import-mode=importlib
 ```
 
-On Linux or macOS, use `.venv/bin/python`. These need the deployed VM:
+On Linux or macOS, use `.venv/bin/python`. For the frontend, run `npm ci` and `npm test` in `frontend/`. These need the deployed VM:
 
 ```bash
 bash scripts/run-spike.sh

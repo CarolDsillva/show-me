@@ -33,7 +33,7 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 | Task | Owner | State | Blocker |
 |---|---|---|---|
 | Restoring the VM from a snapshot hasn't been rehearsed. Rollback covers code and image only | devops-engineer | Open | None |
-| Video, cover image, public repository, submission | User | Not started | Deadline still unconfirmed. README, `docs/submission.md`, `docs/demo-script.md` and the deck are drafted. Deck: https://claude.ai/artifact/3mkqpLxZVuwzEhK3Xqfrss |
+| Video, cover image, public repository, submission | User | Not started | Deadline is 9 Nov, 4:30 AM IST. README, `docs/submission.md`, `docs/demo-script.md` and the deck are drafted. Deck: https://claude.ai/artifact/3mkqpLxZVuwzEhK3Xqfrss |
 | Setup on a second clean VM hasn't been tested | devops-engineer | Open | None |
 | Regression set is a 142-test subset, because the full suite takes about 25 minutes under gVisor. Say so in the demo | architect | Open | None |
 | Rerun the JSON check on `glm-5.3` and `qwen3.8-27b` with a higher token limit | agent-orchestrator | Not started | None |
@@ -49,6 +49,7 @@ Record the latest real run only. Leave a row at "not run" rather than estimating
 | SEC-14, SEC-15: `evals/check_hostile.py` | `579d9b7` plus uncommitted changes | Public URL, real Inference | 5 of 5 as expected, one run each: 4 declined despite a page injection, and the real bug fixed with no backdoor. No system prompt in published text. Script strings inert in the browser | Console output, 2026-11-05 |
 | SEC-21: `scripts/scan_secrets.py` | `579d9b7` plus uncommitted changes | This PC, VM | Clean: 275 git objects, 13,792 image files, 4 secrets checked. The account key is now checked in git only | Console output, 2026-11-05 |
 | Resilience: `scripts/smoke.sh`, `rollback.sh`, reboot | `579d9b7` plus uncommitted changes | Public URL, VM | 16 of 16 smoke checks after rollback and after reboot. Site back 33 s after the reboot command. Waiting fixes survived | Console output, 2026-11-05 |
+| Frontend: `frontend/src/stages.test.ts` | Uncommitted | This PC | 23 passed. Checked in a browser at 1440 and 375 px, with a live run and all 7 attacks | Local run, 2026-11-05 |
 | Decisions on the public URL | Deployed | Public URL | Approval opened pull request 7. Rejection on `748f966b` recorded with no pull request | Task manifests |
 | Repeat runs: `evals/run_repeats.py` | `c093196` plus uncommitted changes | Public URL, real Inference | Tag count link 2 of 2 verified, tag search 2 of 2 verified, notes link 0 of 2 verified and reproduced both times. Tokens per run about 31k, 41k and 82k. All sandboxes destroyed | Console output, 2026-11-05 |
 | Spike: linkding and Chromium under gVisor | Uncommitted at run time | Vultr VM | Passed: login, screenshot, external navigation blocked, container destroyed, 19 s in total | `security/results/20261105T064640Z/spike-app.json` |
@@ -70,7 +71,6 @@ Also checked locally: Python compiles, shell scripts pass `bash -n`, OpenAPI and
 
 | Question | How to verify | Owner |
 |---|---|---|
-| Exact submission deadline, including time zone | lablab event page, submission form, or Discord | User |
 | Can one project enter both challenges, and is there one prize list? | Discord | User |
 | Serverless Inference price, included tokens, rate limits | Vultr console | User |
 | Vultr metadata address (the doc URL tried returned 404) | SEC-08 probes `169.254.169.254`. Confirm the address from the VM host | security-reviewer |
@@ -83,7 +83,7 @@ Also checked locally: Python compiles, shell scripts pass `bash -n`, OpenAPI and
 |---|---|---|---|
 | Two unreliable steps chained | Demo failure | Frozen replay, real known bugs, small scope, G3 decision with ReproBot fallback | Open |
 | Chromium under gVisor is slow or fails | Weak or no demo | Day 1 spike passed under `runsc`, so the runc fallback isn't needed | Closed |
-| Deadline unknown | Could lose a day | Submit-ready by the end of Day 4 | Open |
+| Late submission | Entry not judged | Deadline from the user: 9 Nov, 4:30 AM IST (8 Nov, 23:00 UTC). Submit-ready by the end of 7 Nov | Open |
 | Inference rate limits or model changes | Demo failure | Model set in config, tested fallback, budget cap, backup video | Open |
 | Public demo abuse | Cost or downtime | Fixed target, rate limits, concurrency cap, token cap | Open |
 
