@@ -40,6 +40,19 @@ SYMPTOM_EXIT = 42
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 SHA256 = r"^[a-f0-9]{64}$"
 KEY = r"^[A-Za-z0-9_.:-]{1,128}$"
+MAX_REPORTED_FAILURES = 200
+REGRESSION_TIMEOUT_S = 420
+# A fixed command. No request can choose what runs here.
+# The full suite takes about 25 minutes under gVisor, so this is a subset around the UI we patch.
+REGRESSION_TESTS = (
+    "test_tags_index_view", "test_tags_edit_view", "test_tags_new_view", "test_tags_merge_view",
+    "test_tag_cloud_template", "test_bookmarks_list_template", "test_bookmark_search_tag",
+    "test_pagination_tag", "test_tags_model",
+)
+REGRESSION_COMMAND = (
+    "python -m pytest " + " ".join(f"bookmarks/tests/{name}.py" for name in REGRESSION_TESTS)
+    + " -q -n 2 -p no:cacheprovider --no-header --tb=no -rfE"
+)
 
 @contextlib.asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -78,9 +91,10 @@ class RunRequest(Strict):
     run_key: str = Field(pattern=KEY)
     profile: Literal["browser-session"]
     target_ref: Literal["baseline"]
-    kind: Literal["replay"]
-    script: str = Field(max_length=200_000)
-    script_sha256: str = Field(pattern=SHA256)
+    kind: Literal["replay", "regression"]
+    script: str | None = Field(default=None, max_length=200_000)
+    script_sha256: str | None = Field(default=None, pattern=SHA256)
+    patch: str | None = Field(default=None, max_length=200_000)
 
 
 REQUIRED_FIELDS = {
@@ -300,10 +314,23 @@ def run_path(run_key: str) -> pathlib.Path:
     return STATE_DIR / "runs" / f"{sha256(run_key.encode())}.json"
 
 
-def run_replay(request: RunRequest) -> dict:
+def parse_failed_tests(stdout: bytes) -> list[str]:
+    """Test names from the runner's report. Capped, and only safe characters are kept."""
+    failed = []
+    for line in stdout.decode(errors="replace").splitlines():
+        match = re.match(r"^(?:FAILED|ERROR) ([\w./:\-\[\]]{1,300})", line)
+        if match:
+            failed.append(match.group(1))
+        if len(failed) >= MAX_REPORTED_FAILURES:
+            break
+    return sorted(set(failed))
+
+
+def run_in_sandbox(request: RunRequest) -> dict:
     started_at = now_iso()
     result: dict = {
         "run_key": request.run_key, "kind": request.kind, "script_sha256": request.script_sha256,
+        "applied_patch_sha256": sha256(request.patch.encode()) if request.patch else None,
         "exit_code": None, "symptom_observed": None, "termination": "sandbox_error", "artifacts": [],
         "started_at": started_at,
     }
@@ -313,12 +340,17 @@ def run_replay(request: RunRequest) -> dict:
             result["sandbox_id"] = box.name
             result["attestation"] = attestation_view(box.attestation, sb.attest(box.attestation))
             login = target.new_login()
-            target.prepare(box, login)
-            target.load_files(box, {"repro.py": request.script.encode()})
-            run = box.exec(
-                ["sh", "-c", f"cd {target.RF_DIR} && {' '.join(login.env())} python repro.py"],
-                timeout=box.profile.command_timeout_s,
-            )
+            if request.kind == "regression":
+                target.copy_app(box, request.patch)
+                run = box.exec(["sh", "-c", f"cd /workspace/app && {REGRESSION_COMMAND}"], timeout=REGRESSION_TIMEOUT_S)
+                result["failed_tests"] = parse_failed_tests(run.stdout)
+            else:
+                target.prepare(box, login, request.patch)
+                target.load_files(box, {"repro.py": request.script.encode()})
+                run = box.exec(
+                    ["sh", "-c", f"cd {target.RF_DIR} && {' '.join(login.env())} python repro.py"],
+                    timeout=box.profile.command_timeout_s,
+                )
             result.update(
                 exit_code=run.exit_code,
                 stdout=run.stdout.decode(errors="replace"),
@@ -338,15 +370,20 @@ def run_replay(request: RunRequest) -> dict:
                 result["termination"] = "sandbox_error"
             else:
                 result["termination"] = "exited"
-                result["symptom_observed"] = run.exit_code == SYMPTOM_EXIT if run.exit_code in (0, SYMPTOM_EXIT) else None
-                shot = box.exec(["cat", "/tmp/final.png"], max_bytes=box.profile.max_artifact_bytes)
-                if shot.exit_code == 0 and shot.stdout.startswith(PNG_MAGIC) and not shot.stdout_truncated:
-                    result["artifacts"].append({
-                        "name": "final.png", "sha256": sha256(shot.stdout), "bytes": len(shot.stdout),
-                        "content_b64": base64.b64encode(shot.stdout).decode(),
-                    })
+                if request.kind == "replay":
+                    result["symptom_observed"] = run.exit_code == SYMPTOM_EXIT if run.exit_code in (0, SYMPTOM_EXIT) else None
+                    shot = box.exec(["cat", "/tmp/final.png"], max_bytes=box.profile.max_artifact_bytes)
+                    if shot.exit_code == 0 and shot.stdout.startswith(PNG_MAGIC) and not shot.stdout_truncated:
+                        result["artifacts"].append({
+                            "name": "final.png", "sha256": sha256(shot.stdout), "bytes": len(shot.stdout),
+                            "content_b64": base64.b64encode(shot.stdout).decode(),
+                        })
     except sb.AttestationError as error:
         result["error"] = f"Attestation failed: {str(error)[:500]}"
+    except target.PatchError as error:
+        result["termination"] = "exited"
+        result["patch_failed"] = True
+        result["error"] = str(error)[:800]
     except Exception as error:
         result["error"] = f"{type(error).__name__}: {str(error)[:500]}"
     result["finished_at"] = now_iso()
@@ -357,16 +394,21 @@ def run_replay(request: RunRequest) -> dict:
 
 @app.post("/v1/runs")
 def create_run(request: RunRequest) -> dict:
-    # Checked on the bytes that will run, so a changed script can never replay as the frozen one.
-    if sha256(request.script.encode()) != request.script_sha256:
-        raise HTTPException(422, "Script doesn't match script_sha256")
+    if request.kind == "replay":
+        if request.script is None or request.script_sha256 is None:
+            raise HTTPException(422, "A replay needs script and script_sha256")
+        # Checked on the bytes that will run, so a changed script can never replay as the frozen one.
+        if sha256(request.script.encode()) != request.script_sha256:
+            raise HTTPException(422, "Script doesn't match script_sha256")
+    elif request.script is not None or request.script_sha256 is not None:
+        raise HTTPException(422, "A regression run takes no script")
     path = run_path(request.run_key)
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     if not capacity.acquire(blocking=True, timeout=120):
         raise HTTPException(503, "No sandbox capacity")
     try:
-        result = run_replay(request)
+        result = run_in_sandbox(request)
     finally:
         capacity.release()
     path.parent.mkdir(parents=True, exist_ok=True)

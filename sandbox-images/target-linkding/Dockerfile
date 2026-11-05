@@ -3,7 +3,7 @@
 # has to be here. Base images are pinned by digest.
 
 FROM node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS frontend
-ARG LINKDING_SHA=d0ee9f5100ff4f1b377853efd258cc471a59a76e
+ARG LINKDING_SHA=7caa47b7efe1ef983b6497c75a177b15efa23f21
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && mkdir /src \
@@ -26,6 +26,7 @@ WORKDIR /opt/linkding
 RUN pip install --no-cache-dir uv==0.13.7 \
     && uv sync --frozen --no-install-package uwsgi \
     && playwright install --with-deps chromium \
+    && apt-get install -y --no-install-recommends patch \
     && mkdir -p data/favicons data/previews data/assets \
     && python manage.py migrate --no-input \
     && chmod -R a+rX /opt \

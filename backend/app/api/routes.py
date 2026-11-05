@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import json
+import secrets
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
@@ -16,6 +18,13 @@ from app.tickets.intake import MAX_LENGTH, MIN_LENGTH, SAMPLES, clean_ticket
 
 router = APIRouter(prefix="/api")
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
+class DecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    decision: Literal["approve", "reject"]
+    passcode: str = Field(max_length=200)
+    note: str | None = Field(default=None, max_length=1000)
 
 
 class TicketRequest(BaseModel):
@@ -34,8 +43,8 @@ def client_ip(request: Request) -> str:
 def task_view(task: dict) -> dict:
     return {
         "id": task["id"], "kind": task["kind"], "status": task["status"], "outcome": task["outcome"],
-        "outcome_rule": task["outcome_rule"], "issue_url": task["issue_url"], "pull_request_url": None,
-        "diff": None, "explanation": task["explanation"], "created_at": task["created_at"],
+        "outcome_rule": task["outcome_rule"], "issue_url": task["issue_url"], "pull_request_url": task["pull_request_url"],
+        "diff": task["diff"], "explanation": task["explanation"], "created_at": task["created_at"],
         "ticket": task["ticket"],
     }
 
@@ -93,6 +102,20 @@ async def task_events(task_id: str, request: Request) -> StreamingResponse:
             await asyncio.sleep(0.5)
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+
+
+@router.post("/tasks/{task_id}/decision")
+def task_decision(task_id: str, body: DecisionRequest, request: Request) -> dict:
+    get_task_or_404(request, task_id)
+    state = request.app.state
+    expected = state.settings.operator_passcode
+    # An empty configured passcode never matches, so approval fails closed.
+    if not expected or not secrets.compare_digest(body.passcode.encode(), expected.encode()):
+        raise HTTPException(403, "Wrong operator passcode")
+    if not state.store.claim_decision(task_id):
+        raise HTTPException(409, "This task isn't waiting for a decision")
+    state.worker.resume(task_id, body.decision, body.note)
+    return task_view(state.store.get_task(task_id))
 
 
 @router.get("/tasks/{task_id}/manifest")

@@ -43,7 +43,7 @@ def main() -> None:
         "TARGET_REPO": "CarolDsillva/linkding",
         "TARGET_COMMIT": target_commit,
         "DEPLOYED_COMMIT": deployed_commit,
-        "FIX_PHASE_ENABLED": "false",
+        "FIX_PHASE_ENABLED": "true",
         "PRIMARY_MODEL": "qwen3.8-flash-next",
         "FALLBACK_MODEL": "qwen3.8-27b",
     }

@@ -56,3 +56,18 @@ def test_action_on_an_unknown_session_conflicts():
 def test_screenshots_that_are_not_png_are_dropped():
     reply = service.shape_action_reply({"ok": True, "screenshot_b64": "PHNjcmlwdD4=", "text": "x" * 9000, "elements": "nope"})
     assert reply["screenshot_b64"] is None and len(reply["text"]) == 4000 and reply["elements"] == []
+
+
+def test_regression_run_cannot_choose_a_script():
+    body = {**GOOD_RUN, "kind": "regression"}
+    assert client.post("/v1/runs", json=body).status_code == 422
+
+
+def test_replay_needs_a_script():
+    body = {k: v for k, v in GOOD_RUN.items() if k not in ("script", "script_sha256")}
+    assert client.post("/v1/runs", json=body).status_code == 422
+
+
+def test_failed_test_names_are_filtered_and_capped():
+    report = b"FAILED bookmarks/tests/test_a.py::T::test_x - boom\nERROR bookmarks/tests/test_b.py\nFAILED <script>\nfine\n"
+    assert service.parse_failed_tests(report) == ["bookmarks/tests/test_a.py::T::test_x", "bookmarks/tests/test_b.py"]

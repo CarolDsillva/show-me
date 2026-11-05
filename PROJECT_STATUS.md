@@ -3,9 +3,9 @@
 Owner: architect. Update at the end of every work session and at every gate. To reuse this file, keep the headings and replace the contents. Record facts with evidence, not intentions.
 
 **Last updated:** 2026-11-05
-**Phase:** Day 2 in progress. Public URL: https://137-220-32-178.sslip.io
+**Phase:** Day 3 in progress. Public URL: https://137-220-32-178.sslip.io
 **Product:** ReproFix (working name), with ReproBot as the fallback. Chosen by the user on 2026-11-04
-**Blocked on:** Nothing
+**Blocked on:** Nothing. A developer decision on task `748f966b` would test the rejection path
 
 ## Decisions needed from the user
 
@@ -24,7 +24,7 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 | G0 Direction chosen | 4 Nov | Passed | User's decision, 2026-11-04 |
 | G1 Sandbox proven on a real VM, one real inference call | Day 1 | Passed 2026-11-05 | `security/results/20261105T064640Z`: 16 of 16 security tests, spike passed, 0 leftover containers. Model probe passed live |
 | G2 Typed ticket produces a real filed issue | Day 2 | Passed 2026-11-05 | https://github.com/CarolDsillva/linkding/issues/1 from task `671d871fb8624205bb259360a8a8ebc4`: 3 of 3 replays exit 42 under `runsc`, 4 containers destroyed, 0 left, manifest matches the contract. One successful run, not yet an eval |
-| G3 Full flow on the public URL, and fix-phase decision | Day 3 | Not started | |
+| G3 Full flow on the public URL, and fix-phase decision | Day 3 | Passed 2026-11-05. Fix phase stays on | 2 of 3 demo bugs verified on one run each. Task `f48a18e0ce46476b9582a3d9d7b188a9` approved at 11:14:17 UTC, opening https://github.com/CarolDsillva/linkding/pull/7 with all 9 containers destroyed. `748f966ba8ab45c599d20047204ecf80` still waiting. `cf2fffd75fd446c08729820cf397eae8` ended `NO_VERIFIED_FIX`. Rejection path not yet run |
 | G4 Feature freeze: security suite and evals pass | Day 4 | Not started | |
 | G5 Submitted on lablab.ai | Day 5 | Not started | |
 
@@ -33,7 +33,8 @@ Owner: architect. Update at the end of every work session and at every gate. To 
 | Task | Owner | State | Blocker |
 |---|---|---|---|
 | Update `contracts/` for what Day 2 changed: `initial` and screenshots on sessions, `ticket` on tasks, replay stdout and artifact content | architect | Not started | None |
-| Check the frozen script passes on fixed code. Not yet shown, so a wrong expectation could count as reproduced | agent-orchestrator | Day 3 | Patch runs |
+| Run hostile and not-a-bug tickets, then repeat the demo bugs for a reliability figure | qa-evaluator | Not started | None |
+| Regression set is a 142-test subset, because the full suite takes about 25 minutes under gVisor. Say so in the demo | architect | Open | None |
 | Reaper test (SEC-11), and security tests against the live `sandboxd` | security-reviewer | Not started | None |
 | Sandboxd: treat a dead sandbox as `sandbox_error` (see Day 1 findings) | sandbox-engineer | Written, unit tested only | None |
 | Rerun the JSON check on `glm-5.3` and `qwen3.8-27b` with a higher token limit | agent-orchestrator | Not started | None |
@@ -99,5 +100,6 @@ Also checked locally: Python compiles, shell scripts pass `bash -n`, OpenAPI and
 | 2026-11-03 | Read the rules and Vultr docs. Wrote the engineering system for an earlier idea. Ran product ideation for the Future of Work track | User chooses a direction |
 | 2026-11-04 | Chose ReproFix and linkding. Rewrote docs. Initialized git, wrote contracts, provisioning and host setup scripts, sandbox image, spike, security tests, threat model and model probe. No commits | User adds keys, then provision and run the spike |
 | 2026-11-05 | Created the VM, installed the host, ran the model probe. Flattened the image env, rewrote SEC-04 after diagnosing it. G1 passed | User approves the fork, then start Day 2 |
+| 2026-11-05 | Day 2 committed as `7e29a47`. Added two more real demo bugs to the baseline (`7caa47b`). Built patch proposals, policy, patched replays, regression subset, durable approval, pull request publishing and the approval screen. Frozen script exits 42 on the bug and 0 on the patch. Wrong passcode refused, and the wait survived a restart. Uncommitted | Developer decides on the two fixes, which tests the pull request path |
 | 2026-11-05 | Fork and `reprofix-baseline` branch (`d0ee9f5`, fix #1452 reverted). Built `sandboxd`, API, agent, publisher, frontend, deploy. Real ticket reproduced 3 of 3 on the public URL. Inference key had to be copied a second time, because the saved one stopped working for an unknown reason | User adds the GitHub token, then file the first real issue |
 | 2026-11-05 | User added the token. First real issue filed on the fork, and G2 passed | Commit Day 2, then Day 3: patch runs and the fix phase decision |

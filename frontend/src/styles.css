@@ -106,7 +106,46 @@ textarea::placeholder { color: var(--ink-soft); }
 .replay-symptom { background: var(--pink); border: 2px solid var(--ink); }
 .replay-other { background: var(--white); border: 2px solid var(--ink); }
 
+.verdict-FIX_VERIFIED, .verdict-APPROVED { background: var(--mint); }
+.verdict-NO_VERIFIED_FIX, .verdict-REJECTED { background: var(--canary); }
+
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 26px; }
+.compare figure { margin: 0; background: var(--white); border: 2px solid var(--ink); }
+.compare figure:first-child { background: var(--pink); }
+.compare figure:last-child { background: var(--mint); }
+.compare figcaption { padding: 8px 12px; font: 700 18px/1.25 var(--serif); }
+.compare img { display: block; width: 100%; height: auto; }
+
+.change { margin-bottom: 30px; }
+.change pre {
+  background: var(--white);
+  border: 2px solid var(--ink);
+  padding: 12px 14px;
+  overflow-x: auto;
+  font: 14px/1.5 Consolas, "Liberation Mono", Menlo, monospace;
+}
+.change pre .add { background: var(--mint); display: block; }
+.change pre .del { background: var(--pink); display: block; }
+
+.decision { background: var(--canary); padding: 18px 22px; margin-bottom: 26px; }
+.decision input { max-width: 520px; display: block; }
+.decision p { margin: 0 0 12px; }
+.decision label { display: block; font-weight: 600; margin-top: 10px; }
+.decision input {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--white);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  padding: 8px 10px;
+}
+
+.replays ol { padding-left: 26px; }
+.replays li { overflow-wrap: anywhere; margin-bottom: 6px; }
+
 @media (max-width: 820px) {
+  .compare { grid-template-columns: minmax(0, 1fr); }
   .page { padding: 16px 16px 48px; }
   .submit, .bench { grid-template-columns: minmax(0, 1fr); }
   .replay-row { grid-template-columns: minmax(0, 1fr); }

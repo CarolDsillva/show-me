@@ -22,9 +22,11 @@ class Settings:
     sandboxd_socket: str
     fix_phase_enabled: bool
     commit: str
+    operator_passcode: str
     max_explore_steps: int = 15
     replay_count: int = 3
-    task_token_budget: int = 60_000
+    task_token_budget: int = 250_000
+    max_patch_attempts: int = 3
     daily_token_budget: int = 2_000_000
     max_queue: int = 5
     tickets_per_ip_per_hour: int = 10
@@ -45,4 +47,5 @@ def load_settings() -> Settings:
         sandboxd_socket=os.environ.get("SANDBOXD_SOCKET", "/run/reprofix/sandboxd.sock"),
         fix_phase_enabled=os.environ.get("FIX_PHASE_ENABLED", "false").lower() == "true",
         commit=os.environ.get("DEPLOYED_COMMIT", "unknown"),
+        operator_passcode=os.environ["OPERATOR_PASSCODE"],
     )

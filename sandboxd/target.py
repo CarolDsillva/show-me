@@ -27,6 +27,10 @@ class TargetError(RuntimeError):
     """The app couldn't be started inside the sandbox."""
 
 
+class PatchError(RuntimeError):
+    """The patch couldn't be applied inside the sandbox."""
+
+
 @dataclasses.dataclass(frozen=True)
 class TestLogin:
     """Generated per run. It exists only inside that one sandbox and never reaches a prompt."""
@@ -64,9 +68,18 @@ def load_files(box: sb.Sandbox, files: dict[str, bytes]) -> None:
     _check(box.exec(["tar", "-xf", "-", "-C", RF_DIR], stdin=tar_of(files)), "load files")
 
 
-def prepare(box: sb.Sandbox, login: TestLogin) -> None:
-    """Copy the app to tmpfs, seed it, start it and wait until it answers."""
+def copy_app(box: sb.Sandbox, patch: str | None = None) -> None:
+    """Copy the app to tmpfs and apply a patch there. A patch is never applied on the host."""
     _check(box.exec(["cp", "-r", "/opt/linkding", "/workspace/app"]), "copy app")
+    if patch:
+        applied = box.exec(["patch", "-p1", "--batch", "--forward", "-d", "/workspace/app"], stdin=patch.encode())
+        if applied.exit_code != 0:
+            raise PatchError(f"The patch didn't apply: {applied.text[-600:]}")
+
+
+def prepare(box: sb.Sandbox, login: TestLogin, patch: str | None = None) -> None:
+    """Prepare the app, seed it, start it and wait until it answers."""
+    copy_app(box, patch)
     load_files(box, {
         "seed.py": (DRIVER_DIR / "seed.py").read_bytes(),
         "browser_driver.py": (DRIVER_DIR / "browser_driver.py").read_bytes(),

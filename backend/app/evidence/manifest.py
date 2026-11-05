@@ -31,7 +31,8 @@ def _replay_record(replay: dict) -> dict:
     destruction = replay.get("destruction") or {}
     record = {
         "id": replay.get("sandbox_id") or replay["run_key"],
-        "kind": "replay",
+        "kind": replay.get("kind", "replay"),
+        "applied_patch_sha256": replay.get("applied_patch_sha256"),
         "image_id": attestation.get("image_id") or "unknown",
         "attestation": attestation,
         "exit_code": replay.get("exit_code"),
@@ -53,6 +54,7 @@ def _replay_record(replay: dict) -> dict:
 def build_manifest(
     *, task_id: str, ticket: str, repository: str, commit: str, script_sha256: str | None,
     replays: list[dict], events: list[dict], outcome: str, rule: str, issue_url: str | None,
+    patch: dict | None = None, pull_request_url: str | None = None, decided_at: str | None = None,
 ) -> dict:
     llm_calls = []
     for event in events:
@@ -73,9 +75,9 @@ def build_manifest(
         "ticket_sha256": sha256_hex(ticket.encode()),
         "target": {"repository": repository, "commit": commit},
         "frozen_script_sha256": script_sha256,
-        "patch": None,
+        "patch": patch,
         "sandboxes": [*_session_record(events), *(_replay_record(r) for r in replays)],
         "llm_calls": llm_calls,
-        "publishing": {"issue_url": issue_url, "pull_request_url": None, "decided_at": None},
+        "publishing": {"issue_url": issue_url, "pull_request_url": pull_request_url, "decided_at": decided_at},
         "outcome": {"value": outcome, "rule": rule},
     }

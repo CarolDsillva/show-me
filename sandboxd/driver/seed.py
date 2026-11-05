@@ -20,6 +20,7 @@ user = get_user_model().objects.create_superuser(
 )
 now = timezone.now()
 tags = {name: Tag.objects.create(name=name, owner=user, date_added=now) for name in ("python", "recipes", "reading")}
+NOTES = {"Django notes": "Full docs are at www.example.com/django-docs"}
 samples = [
     ("https://example.invalid/python-tips", "Python tips", ["python", "reading"]),
     ("https://example.invalid/django-notes", "Django notes", ["python"]),
@@ -27,6 +28,8 @@ samples = [
     ("https://example.invalid/long-read", "A very long read", ["reading"]),
 ]
 for url, title, names in samples:
-    bookmark = Bookmark.objects.create(url=url, title=title, owner=user, date_added=now, date_modified=now)
+    bookmark = Bookmark.objects.create(
+        url=url, title=title, notes=NOTES.get(title, ""), owner=user, date_added=now, date_modified=now
+    )
     bookmark.tags.set(tags[name] for name in names)
 print("seeded", len(samples))

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Ticket, page and model text is untrusted. It is only ever rendered as React text nodes.
 
@@ -10,6 +10,10 @@ type Task = {
   outcome: string;
   outcome_rule: string | null;
   issue_url: string | null;
+  pull_request_url: string | null;
+  diff: string | null;
+  explanation: string | null;
+  ticket?: string;
 };
 
 type TaskEvent = {
@@ -25,6 +29,10 @@ const STATUS_WORDS: Record<string, string> = {
   exploring: "Trying to reproduce the bug in a real browser",
   confirming: "Replaying the frozen steps in fresh sandboxes",
   filing: "Filing the bug",
+  patching: "Writing a fix",
+  verifying: "Testing the fix in fresh sandboxes",
+  awaiting_approval: "Fix verified. A developer decides what happens next",
+  publishing: "Recording the decision",
   done: "Finished",
 };
 
@@ -32,6 +40,10 @@ const OUTCOME_WORDS: Record<string, string> = {
   REPRODUCED: "Bug reproduced",
   NOT_REPRODUCED: "Not reproduced",
   FAILED: "This run failed",
+  FIX_VERIFIED: "Fix verified",
+  NO_VERIFIED_FIX: "Bug filed, but no fix was verified",
+  APPROVED: "Fix approved and pull request opened",
+  REJECTED: "Fix rejected",
 };
 
 function taskFromUrl(): string | null {
@@ -190,10 +202,17 @@ function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
 
   const steps = events.filter((e) => e.type === "browser_action");
   const thoughts = events.filter((e) => e.type === "agent_thought");
-  const replays = events.filter((e) => e.type === "replay_finished");
+  const allReplays = events.filter((e) => e.type === "replay_finished");
+  const replays = allReplays.filter((e) => e.data?.stage !== "patched");
+  const patchedReplays = allReplays.filter((e) => e.data?.stage === "patched");
+  const verified = events.filter((e) => e.type === "patch_verified");
+  const proposed = events.filter((e) => e.type === "patch_proposed");
   const destroyed = events.find((e) => e.type === "sandbox_destroyed");
   const frozen = events.find((e) => e.type === "repro_frozen");
   const done = task?.status === "done";
+  const waiting = task?.status === "awaiting_approval";
+  const failingShot = replays.map((e) => e.data?.screenshot_sha256).filter(Boolean).pop();
+  const passingShot = patchedReplays.map((e) => e.data?.screenshot_sha256).filter(Boolean).pop();
 
   if (missing) {
     return (
@@ -206,18 +225,48 @@ function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
 
   return (
     <main className="run">
-      {done && task ? (
+      {(done || waiting) && task ? (
         <section className={`verdict verdict-${task.outcome}`}>
           <h1>{OUTCOME_WORDS[task.outcome] ?? task.outcome}</h1>
           <p>{task.outcome_rule}</p>
           <div className="verdict-links">
             {task.issue_url && <a href={task.issue_url} rel="noreferrer noopener" target="_blank">Read the filed issue</a>}
+            {task.pull_request_url && <a href={task.pull_request_url} rel="noreferrer noopener" target="_blank">Open the pull request</a>}
             <a href={`/api/tasks/${taskId}/manifest`} target="_blank" rel="noreferrer noopener">See the evidence manifest</a>
-            <button onClick={onNew}>Report another bug</button>
+            {done && <button onClick={onNew}>Report another bug</button>}
           </div>
         </section>
       ) : (
         <p className="now" role="status">{STATUS_WORDS[task?.status ?? "queued"] ?? task?.status}</p>
+      )}
+
+      {waiting && <Decision taskId={taskId} onDecided={() => window.location.reload()} />}
+
+      {task?.diff && failingShot && passingShot ? (
+        <section className="compare">
+          <figure>
+            <figcaption>Before the fix: the bug appears</figcaption>
+            <img src={`/api/tasks/${taskId}/artifacts/${String(failingShot)}`} alt="The final screen when the frozen steps run on the current code" />
+          </figure>
+          <figure>
+            <figcaption>After the fix: same steps, bug gone</figcaption>
+            <img src={`/api/tasks/${taskId}/artifacts/${String(passingShot)}`} alt="The final screen when the same frozen steps run on the patched code" />
+          </figure>
+        </section>
+      ) : null}
+
+      {task?.diff && (
+        <section className="change">
+          <h2>The proposed change</h2>
+          {task.explanation && <p className="thought">{task.explanation}</p>}
+          <pre tabIndex={0}>
+            {task.diff.split("\n").map((line, index) => (
+              <span key={index} className={line.startsWith("+") && !line.startsWith("+++") ? "add" : line.startsWith("-") && !line.startsWith("---") ? "del" : undefined}>
+                {line + "\n"}
+              </span>
+            ))}
+          </pre>
+        </section>
       )}
 
       <div className="bench">
@@ -268,6 +317,70 @@ function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
           <p className="fine">Script SHA-256: {String(frozen.data?.script_sha256)}</p>
         </section>
       )}
+
+      {proposed.length > 0 && (
+        <section className="replays">
+          <h2>Fix attempts</h2>
+          <ol>
+            {proposed.map((attempt, index) => (
+              <li key={attempt.seq}>
+                Attempt {index + 1} changed {((attempt.data?.files as string[]) ?? []).join(", ")}.{" "}
+                {verified[index]?.text ?? ""}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </main>
+  );
+}
+
+function Decision({ taskId, onDecided }: { taskId: string; onDecided: () => void }) {
+  // Read from the box at click time, so a password manager or autofill can't leave this out of date.
+  const passcodeBox = useRef<HTMLInputElement>(null);
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  async function decide(decision: "approve" | "reject") {
+    const passcode = passcodeBox.current?.value.trim() ?? "";
+    if (!passcode) {
+      setError("Enter the operator passcode first.");
+      passcodeBox.current?.focus();
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision, passcode, note: note || undefined }),
+      });
+      if (response.ok) {
+        onDecided();
+        return;
+      }
+      setError(response.status === 403 ? "That passcode is wrong. Only the operator can decide." : "This fix isn't waiting for a decision any more. Reload the page.");
+    } catch {
+      setError("The server didn't answer. Check your connection and try again.");
+    }
+    setSending(false);
+  }
+
+  return (
+    <form className="decision" onSubmit={(event) => event.preventDefault()}>
+      <h2>Your decision</h2>
+      <p>A passing replay shows this symptom is gone. It doesn't show the change is good, so read the change below first. No pull request opens without your approval.</p>
+      <label htmlFor="note">Note (optional)</label>
+      <input id="note" maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />
+      <label htmlFor="passcode">Operator passcode</label>
+      <input id="passcode" ref={passcodeBox} type="password" autoComplete="off" maxLength={200} />
+      <div className="slip-actions">
+        <button className="primary" type="button" disabled={sending} onClick={() => decide("approve")}>Approve and open pull request</button>
+        <button type="button" disabled={sending} onClick={() => decide("reject")}>Reject this fix</button>
+      </div>
+      {error && <p role="alert" className="error">{error}</p>}
+    </form>
   );
 }

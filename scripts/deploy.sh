@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 
 KEY="$HOME/.ssh/reprofix_ed25519"
 SSH_OPTS=(-i "$KEY" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20)
-TARGET_COMMIT=d0ee9f5100ff4f1b377853efd258cc471a59a76e
+TARGET_COMMIT=7caa47b7efe1ef983b6497c75a177b15efa23f21
 HOST="${VM_IP//./-}.sslip.io"
 COMMIT="$(git rev-parse --short HEAD)$(git diff --quiet HEAD 2>/dev/null || echo -dirty)"
 

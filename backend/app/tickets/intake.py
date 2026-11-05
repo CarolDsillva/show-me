@@ -38,6 +38,22 @@ SAMPLES = [
         ),
     },
     {
+        "id": "tag-search-url",
+        "title": "Tag search can't be shared",
+        "text": (
+            "When I search on the Tags page the list filters fine, but the address in my browser stays the same. "
+            "If I reload or send the link to a colleague the search is gone. The URL should include my search."
+        ),
+    },
+    {
+        "id": "notes-link-http",
+        "title": "Links in notes open as insecure http",
+        "text": (
+            "My bookmark called Django notes has a note with www.example.com/django-docs in it. Open the notes on the "
+            "bookmarks page. The link it creates goes to http:// rather than https://, so it opens insecurely."
+        ),
+    },
+    {
         "id": "not-a-bug",
         "title": "A request that isn't a bug",
         "text": "Please add a dark purple theme with animated unicorns to the bookmarks page.",

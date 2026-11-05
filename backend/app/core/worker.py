@@ -7,13 +7,15 @@ import queue
 import threading
 import uuid
 
+from langgraph.types import Command
+
 from app.agent.graph import Deps, build_graph
 from app.core.config import Settings
-from app.db.store import DONE, Store
+from app.db.store import AWAITING, DONE, Store
 from app.evidence.manifest import build_manifest
 from app.evidence.store import EvidenceStore
 from app.llm.gateway import CallRecord, Gateway
-from app.publish.github import Publisher
+from app.publish.github import Publisher, SourceAndPullRequests
 from app.sandbox_client.client import SandboxClient
 
 
@@ -32,11 +34,13 @@ class Worker:
         self.evidence = evidence
         self.sandbox = SandboxClient(settings.sandboxd_socket)
         self.publisher = Publisher(settings.github_token, settings.target_repo)
-        self.queue: queue.Queue[str] = queue.Queue(maxsize=settings.max_queue)
+        self.source = SourceAndPullRequests(self.publisher, settings.target_commit)
+        self.queue: queue.Queue[tuple[str, dict | None]] = queue.Queue(maxsize=settings.max_queue)
         threading.Thread(target=self._loop, daemon=True).start()
 
     def recover_unfinished(self) -> None:
-        """Day 2 has no resume. A task cut off by a restart is reported as failed, not left hanging."""
+        """A task waiting for approval survives a restart, durably. Anything cut off mid-run is
+        reported as failed rather than left hanging, because its sandbox is already gone."""
         for task_id in self.store.unfinished_tasks():
             self._fail(task_id, "The server restarted during this task")
 
@@ -50,21 +54,26 @@ class Worker:
         self.store.create_task(task_id, ticket, client_ip)
         self.store.add_event(task_id, "status_changed", "queued")
         try:
-            self.queue.put_nowait(task_id)
+            self.queue.put_nowait((task_id, None))
         except queue.Full as error:
             self._fail(task_id, "The queue was full")
             raise QueueFull() from error
         return task_id
 
+    def resume(self, task_id: str, decision: str, note: str | None) -> None:
+        # A decision is never dropped for lack of queue room, because it blocks until there is some.
+        self.store.add_event(task_id, "status_changed", "publishing")
+        self.queue.put((task_id, {"decision": decision, "note": (note or "")[:1000] or None}))
+
     def _loop(self) -> None:
         while True:
-            task_id = self.queue.get()
+            task_id, decision = self.queue.get()
             try:
-                self._run(task_id)
+                self._run(task_id, decision)
             except Exception as error:
                 self._fail(task_id, f"{type(error).__name__}: {str(error)[:300]}")
 
-    def _run(self, task_id: str) -> None:
+    def _run(self, task_id: str, decision: dict | None) -> None:
         task = self.store.get_task(task_id)
 
         def on_call(record: CallRecord) -> None:
@@ -75,11 +84,12 @@ class Worker:
             self.settings.inference_key, self.settings.primary_model, self.settings.fallback_model,
             self.settings.task_token_budget, on_call,
         )
-        deps = Deps(self.settings, self.store, self.evidence, self.sandbox, self.publisher, gateway)
+        deps = Deps(self.settings, self.store, self.evidence, self.sandbox, self.publisher, gateway, self.source)
         graph = build_graph(deps, str(self.settings.data_dir / "checkpoints.sqlite3"))
-        config = {"configurable": {"thread_id": task_id}, "recursion_limit": self.settings.max_explore_steps * 2 + 20}
+        config = {"configurable": {"thread_id": task_id}, "recursion_limit": self.settings.max_explore_steps * 2 + 60}
+        graph_input = Command(resume=decision) if decision else {"task_id": task_id, "ticket": task["ticket"]}
         try:
-            graph.invoke({"task_id": task_id, "ticket": task["ticket"]}, config)
+            graph.invoke(graph_input, config)
         except Exception as error:
             values = graph.get_state(config).values or {}
             if values.get("session_id"):
@@ -87,12 +97,13 @@ class Worker:
             # A late failure keeps the evidence gathered so far.
             self._fail(
                 task_id, f"{type(error).__name__}: {str(error)[:300]}",
-                script_sha256=values.get("script_sha256"), replays=values.get("replays") or [],
+                script_sha256=values.get("script_sha256"),
+                replays=[*(values.get("replays") or []), *(values.get("patched_replays") or []), *(values.get("regressions") or [])],
             )
 
     def _fail(self, task_id: str, reason: str, script_sha256: str | None = None, replays: list[dict] | None = None) -> None:
         task = self.store.get_task(task_id)
-        if task is None or task["status"] == DONE:
+        if task is None or task["status"] in (DONE, AWAITING):
             return
         self.store.update_task(task_id, outcome="FAILED", outcome_rule=reason, status=DONE)
         self.store.add_event(task_id, "error", reason)

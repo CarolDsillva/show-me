@@ -20,7 +20,7 @@ class SandboxClient:
         self.http = httpx.Client(
             transport=transport or httpx.HTTPTransport(uds=socket_path),
             base_url="http://sandboxd",
-            timeout=httpx.Timeout(300, connect=10),
+            timeout=httpx.Timeout(600, connect=10),
         )
 
     def start_session(self, session_key: str) -> dict:
@@ -44,11 +44,19 @@ class SandboxClient:
         response.raise_for_status()
         return response.json()
 
-    def replay(self, run_key: str, script: str, script_sha256: str) -> dict:
-        response = self._post("/v1/runs", {
+    def replay(self, run_key: str, script: str, script_sha256: str, patch: str | None = None) -> dict:
+        body = {
             "run_key": run_key, "profile": PROFILE, "target_ref": "baseline", "kind": "replay",
             "script": script, "script_sha256": script_sha256,
-        })
+        }
+        return self._run(body | ({"patch": patch} if patch else {}))
+
+    def regression(self, run_key: str, patch: str | None = None) -> dict:
+        body = {"run_key": run_key, "profile": PROFILE, "target_ref": "baseline", "kind": "regression"}
+        return self._run(body | ({"patch": patch} if patch else {}))
+
+    def _run(self, body: dict) -> dict:
+        response = self._post("/v1/runs", body)
         if response.status_code != 200:
             raise SandboxUnavailable(f"sandboxd returned {response.status_code}: {response.text[:300]}")
         return response.json()

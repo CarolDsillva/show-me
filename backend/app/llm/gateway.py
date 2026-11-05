@@ -12,7 +12,7 @@ import httpx
 
 from app.core.config import INFERENCE_BASE_URL
 
-MAX_TOKENS = 3000
+MAX_TOKENS = 8000
 
 
 class BudgetExceeded(RuntimeError):

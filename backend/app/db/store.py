@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS events (
 );
 """
 DONE = "done"
-UPDATABLE = {"status", "outcome", "outcome_rule", "issue_url", "explanation"}
+UPDATABLE = {"status", "outcome", "outcome_rule", "issue_url", "explanation", "diff", "pull_request_url"}
+AWAITING = "awaiting_approval"
 
 
 def now_iso() -> str:
@@ -34,6 +35,10 @@ class Store:
         with self._connect() as connection:
             connection.execute("PRAGMA journal_mode=WAL")
             connection.executescript(SCHEMA)
+            columns = {row["name"] for row in connection.execute("PRAGMA table_info(tasks)")}
+            for column in ("diff", "pull_request_url"):
+                if column not in columns:
+                    connection.execute(f"ALTER TABLE tasks ADD COLUMN {column} TEXT")
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=30)
@@ -54,6 +59,14 @@ class Store:
         assignments = ", ".join(f"{name} = ?" for name in fields)
         with self.lock, self._connect() as connection:
             connection.execute(f"UPDATE tasks SET {assignments} WHERE id = ?", (*fields.values(), task_id))
+
+    def claim_decision(self, task_id: str) -> bool:
+        """Atomically move a task out of the wait, so one decision can only be used once."""
+        with self.lock, self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE tasks SET status = 'publishing' WHERE id = ? AND status = ?", (task_id, AWAITING)
+            )
+            return cursor.rowcount == 1
 
     def add_tokens(self, task_id: str, tokens: int) -> None:
         with self.lock, self._connect() as connection:
@@ -80,7 +93,7 @@ class Store:
 
     def unfinished_tasks(self) -> list[str]:
         with self._connect() as connection:
-            rows = connection.execute("SELECT id FROM tasks WHERE status != ?", (DONE,)).fetchall()
+            rows = connection.execute("SELECT id FROM tasks WHERE status NOT IN (?, ?)", (DONE, AWAITING)).fetchall()
         return [row["id"] for row in rows]
 
     def add_event(self, task_id: str, event_type: str, text: str | None = None, data: dict | None = None) -> None:

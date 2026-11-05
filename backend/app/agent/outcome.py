@@ -35,3 +35,39 @@ def decide_reproduction(replays: list[dict], script_sha256: str, required: int) 
         if replay.get("exit_code") != SYMPTOM_EXIT or replay.get("symptom_observed") is not True:
             return Decision("NOT_REPRODUCED", f"Replay {index} exited {replay.get('exit_code')}, not the symptom code")
     return Decision("REPRODUCED", f"{required} of {required} fresh attested replays of the frozen script showed the symptom")
+
+
+def decide_fix(
+    *, replays: list[dict], script_sha256: str, patch_sha256: str, required: int,
+    regression_patched: dict | None, regression_baseline: dict | None,
+) -> Decision:
+    """FIX_VERIFIED needs the frozen script to pass on the patched code in every fresh run,
+    and no regression test passing on the baseline to fail with the patch."""
+    if len(replays) != required:
+        last = replays[-1].get("exit_code") if replays else None
+        return Decision("FIX_REJECTED", f"Replay {len(replays)} of {required} on the patched code exited {last}, so the bug is still there")
+    runs = [*replays, *(run for run in (regression_patched, regression_baseline) if run)]
+    for run in runs:
+        if (run.get("destruction") or {}).get("destroyed") is not True:
+            return Decision("FAILED", "A container's destruction wasn't confirmed")
+        attestation = run.get("attestation") or {}
+        if not attestation or attestation.get("mismatches"):
+            return Decision("FAILED", "A sandbox failed attestation")
+    for index, replay in enumerate(replays, start=1):
+        if replay.get("script_sha256") != script_sha256 or replay.get("applied_patch_sha256") != patch_sha256:
+            return Decision("FAILED", f"Replay {index} didn't run the frozen script on this patch")
+        if replay.get("termination") != "exited" or replay.get("exit_code") != 0 or replay.get("symptom_observed") is not False:
+            return Decision("FIX_REJECTED", f"Replay {index} on the patched code exited {replay.get('exit_code')}, not 0")
+    if not regression_patched or not regression_baseline:
+        return Decision("FIX_REJECTED", "The regression tests didn't run")
+    for run in (regression_patched, regression_baseline):
+        if run.get("termination") != "exited" or run.get("exit_code") not in (0, 1) or run.get("stdout_truncated"):
+            return Decision("FIX_REJECTED", f"The regression run ended as {run.get('termination')}, exit {run.get('exit_code')}")
+    if regression_patched.get("applied_patch_sha256") != patch_sha256:
+        return Decision("FAILED", "The regression run didn't use this patch")
+    new_failures = sorted(set(regression_patched.get("failed_tests") or []) - set(regression_baseline.get("failed_tests") or []))
+    if new_failures:
+        return Decision("FIX_REJECTED", f"{len(new_failures)} tests now fail: {', '.join(new_failures[:5])}")
+    if regression_patched.get("exit_code") == 1 and not regression_patched.get("failed_tests"):
+        return Decision("FIX_REJECTED", "The regression run failed without naming a test")
+    return Decision("FIX_VERIFIED", f"The frozen script passed {required} of {required} fresh replays on the patched code, with no new test failures")

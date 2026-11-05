@@ -100,3 +100,49 @@ WRITE_ISSUE_TOOL = {
         },
     },
 }
+
+PATCH_STEP_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "patch_step",
+        "description": "Read source files, or propose exact text edits that fix the bug.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["read", "propose"]},
+                "paths": {"type": "array", "items": {"type": "string"}, "description": "For read: up to 4 listed paths."},
+                "edits": {
+                    "type": "array",
+                    "description": "For propose. Each old_text must occur exactly once in that file.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string"},
+                            "old_text": {"type": "string"},
+                            "new_text": {"type": "string"},
+                        },
+                        "required": ["path", "old_text", "new_text"],
+                    },
+                },
+                "explanation": {"type": "string", "description": "For propose: what caused the bug and how this fixes it."},
+            },
+            "required": ["action"],
+        },
+    },
+}
+
+PROPOSE_ONLY_TOOL = {
+    "type": "function",
+    "function": {
+        **PATCH_STEP_TOOL["function"],
+        "description": "Propose exact text edits that fix the bug. Reading is no longer available.",
+        "parameters": {
+            **PATCH_STEP_TOOL["function"]["parameters"],
+            "properties": {
+                **PATCH_STEP_TOOL["function"]["parameters"]["properties"],
+                "action": {"type": "string", "enum": ["propose"]},
+            },
+            "required": ["action", "edits", "explanation"],
+        },
+    },
+}

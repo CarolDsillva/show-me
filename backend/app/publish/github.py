@@ -16,6 +16,7 @@ from app.core.config import ALLOWED_REPOSITORIES
 API = "https://api.github.com"
 EVIDENCE_BRANCH = "reprofix-evidence"
 LABEL = "reprofix"
+BASE_BRANCH = "reprofix-baseline"
 
 
 class PublishRefused(RuntimeError):
@@ -110,6 +111,76 @@ class Publisher:
         })
         response.raise_for_status()
         return response.json()["html_url"]
+
+
+class SourceAndPullRequests:
+    """Reads the pinned target source, and opens pull requests. Always within our own fork."""
+
+    def __init__(self, publisher: Publisher, commit: str, base_branch: str = BASE_BRANCH) -> None:
+        self.publisher = publisher
+        self.http = publisher.http
+        self.commit = commit
+        self.base_branch = base_branch
+
+    def list_files(self) -> list[str]:
+        response = self.http.get(self.publisher._repo(f"/git/trees/{self.commit}"), params={"recursive": "1"})
+        response.raise_for_status()
+        return [item["path"] for item in response.json()["tree"] if item["type"] == "blob"]
+
+    def read_file(self, path: str) -> str:
+        if ".." in path or path.startswith("/"):
+            raise ValueError("Bad path")
+        response = self.http.get(
+            self.publisher._repo(f"/contents/{path}"), params={"ref": self.commit},
+            headers={"Accept": "application/vnd.github.raw+json"},
+        )
+        response.raise_for_status()
+        return response.text
+
+    def open_pull_request(self, task_id: str, title: str, body: str, files: dict[str, str]) -> str:
+        """One branch and one pull request per task, even if this runs again after a restart."""
+        if not re.fullmatch(r"[a-f0-9]{32}", task_id):
+            raise ValueError("Bad task ID")
+        branch = f"reprofix/fix-{task_id[:16]}"
+        owner = self.publisher.repository.split("/")[0]
+        existing = self.http.get(self.publisher._repo("/pulls"), params={"head": f"{owner}:{branch}", "state": "all"})
+        existing.raise_for_status()
+        if existing.json():
+            return existing.json()[0]["html_url"]
+        ref = self.http.post(self.publisher._repo("/git/refs"), json={"ref": f"refs/heads/{branch}", "sha": self.commit})
+        if ref.status_code not in (201, 422):
+            ref.raise_for_status()
+        for path, content in files.items():
+            current = self.http.get(self.publisher._repo(f"/contents/{path}"), params={"ref": branch})
+            current.raise_for_status()
+            update = self.http.put(self.publisher._repo(f"/contents/{path}"), json={
+                "message": f"ReproFix patch for task {task_id}",
+                "content": base64.b64encode(content.encode()).decode(),
+                "sha": current.json()["sha"],
+                "branch": branch,
+            })
+            update.raise_for_status()
+        response = self.http.post(self.publisher._repo("/pulls"), json={
+            "title": safe_title(title), "head": branch, "base": self.base_branch, "body": body,
+        })
+        response.raise_for_status()
+        return response.json()["html_url"]
+
+
+def pull_request_body(*, issue_url: str | None, explanation: str, rule: str, script_sha256: str, patch_sha256: str) -> str:
+    issue = f"Bug report: {issue_url}\n\n" if issue_url else ""
+    return f"""> Opened by ReproFix after a developer approved it.
+
+{issue}## Result
+
+{rule}.
+
+Script SHA-256: `{script_sha256}`. Patch SHA-256: `{patch_sha256}`.
+
+## Explanation (written by a model, untrusted)
+
+{fenced(explanation)}
+"""
 
 
 def issue_body(
