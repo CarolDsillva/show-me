@@ -15,6 +15,7 @@ from app.db.store import AWAITING, DONE, Store
 from app.evidence.manifest import build_manifest
 from app.evidence.store import EvidenceStore
 from app.llm.gateway import CallRecord, Gateway
+from app.llm.pricing import call_cost, fetch_prices
 from app.publish.github import Publisher, SourceAndPullRequests
 from app.sandbox_client.client import SandboxClient
 
@@ -35,6 +36,7 @@ class Worker:
         self.sandbox = SandboxClient(settings.sandboxd_socket)
         self.publisher = Publisher(settings.github_token, settings.target_repo)
         self.source = SourceAndPullRequests(self.publisher, settings.target_commit)
+        self.prices: dict[str, tuple[float, float]] = {}
         self.queue: queue.Queue[tuple[str, dict | None]] = queue.Queue(maxsize=settings.max_queue)
         threading.Thread(target=self._loop, daemon=True).start()
 
@@ -117,8 +119,11 @@ class Worker:
         task = self.store.get_task(task_id)
 
         def on_call(record: CallRecord) -> None:
-            self.store.add_tokens(task_id, record.prompt_tokens + record.completion_tokens)
-            self.store.add_event(task_id, "llm_call", record.model, record.__dict__)
+            if not self.prices:
+                self.prices = fetch_prices()
+            cost = call_cost(self.prices, record.model, record.prompt_tokens, record.completion_tokens)
+            self.store.add_tokens(task_id, record.prompt_tokens + record.completion_tokens, cost)
+            self.store.add_event(task_id, "llm_call", record.model, {**record.__dict__, "cost_usd": cost})
 
         gateway = Gateway(
             self.settings.inference_key, self.settings.primary_model, self.settings.fallback_model,

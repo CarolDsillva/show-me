@@ -7,6 +7,7 @@ from app.agent import policy
 from app.agent.outcome import decide_fix
 from app.db.store import AWAITING, Store
 from app.evidence.signing import Signer, verify
+from app.llm.pricing import call_cost, fetch_prices, parse_prices
 from app.evidence.store import EvidenceStore, canonical
 from app.tickets.intake import find_injection
 from app.publish.github import Publisher, SourceAndPullRequests
@@ -267,3 +268,31 @@ def test_the_signing_key_is_kept_across_restarts_and_private(tmp_path):
     assert Signer(tmp_path / "key").public_key == first.public_key
     assert (tmp_path / "key").stat().st_size == 32
     assert set(first.sign(b"x")) == {"algorithm", "public_key", "value"}
+
+
+def test_prices_are_read_from_the_model_list_and_costs_add_up():
+    payload = {"data": [
+        {"id": "m", "input_modalities": [{"pricing": [{"type": "prompt", "unit": "token", "cost_usd": "0.0000001"}]}],
+         "output_modalities": [{"pricing": [{"type": "completion", "unit": "token", "cost_usd": "0.0000002"}]}]},
+        {"id": "no-price", "input_modalities": [], "output_modalities": []},
+    ]}
+    prices = parse_prices(payload)
+    assert set(prices) == {"m"}
+    assert call_cost(prices, "m", 1_000_000, 1_000_000) == pytest.approx(0.3)
+    assert call_cost(prices, "other", 10, 10) is None
+
+
+def test_task_cost_accumulates_and_an_unknown_cost_adds_nothing(tmp_path):
+    store = Store(tmp_path / "a.sqlite3")
+    store.create_task("t", "x" * 20, "ip")
+    store.add_tokens("t", 10, 0.5)
+    store.add_tokens("t", 5, None)
+    task = store.get_task("t")
+    assert task["tokens_used"] == 15 and task["cost_usd"] == 0.5
+
+
+def test_a_price_lookup_failure_means_unknown_not_zero():
+    def handler(_request):
+        return httpx.Response(500)
+
+    assert fetch_prices(httpx.MockTransport(handler)) == {}

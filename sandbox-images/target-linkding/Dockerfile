@@ -1,9 +1,9 @@
-# Sandbox image: our linkding baseline (upstream 27b7303 with fix #1452 reverted), plus Chromium.
+# Sandbox image: our linkding baseline (upstream 27b7303 with fixes #1452, f67c460, #1225, 62091c4 and #819 reverted), plus Chromium.
 # Holds no secrets. The running container has no network, so everything it needs
 # has to be here. Base images are pinned by digest.
 
 FROM node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS frontend
-ARG LINKDING_SHA=7caa47b7efe1ef983b6497c75a177b15efa23f21
+ARG LINKDING_SHA=46e02034697046f4b7da5977a03a9de6c48173e8
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && mkdir /src \

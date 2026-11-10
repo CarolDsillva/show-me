@@ -113,7 +113,9 @@ it("counts only the current attempt's replays", () => {
 
 it("adds up model use", () => {
   const events = [event("llm_call", "m", { model: "m", prompt_tokens: 5, completion_tokens: 2 }), event("llm_call", "m", { model: "m", prompt_tokens: 1, completion_tokens: 1 })];
-  expect(modelUse(events)).toEqual({ calls: 2, tokens: 9, models: ["m"] });
+  expect(modelUse(events)).toEqual({ calls: 2, tokens: 9, models: ["m"], cost: null });
+  const priced = [event("llm_call", "m", { model: "m", prompt_tokens: 1, completion_tokens: 1, cost_usd: 0.25 }), event("llm_call", "m", { model: "m", prompt_tokens: 1, completion_tokens: 1, cost_usd: 0.5 })];
+  expect(modelUse(priced).cost).toBe(0.75);
 });
 
 it("formats durations", () => {

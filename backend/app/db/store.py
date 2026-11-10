@@ -39,6 +39,8 @@ class Store:
             for column in ("diff", "pull_request_url"):
                 if column not in columns:
                     connection.execute(f"ALTER TABLE tasks ADD COLUMN {column} TEXT")
+            if "cost_usd" not in columns:
+                connection.execute("ALTER TABLE tasks ADD COLUMN cost_usd REAL")
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=30)
@@ -68,9 +70,12 @@ class Store:
             )
             return cursor.rowcount == 1
 
-    def add_tokens(self, task_id: str, tokens: int) -> None:
+    def add_tokens(self, task_id: str, tokens: int, cost_usd: float | None = None) -> None:
         with self.lock, self._connect() as connection:
-            connection.execute("UPDATE tasks SET tokens_used = tokens_used + ? WHERE id = ?", (tokens, task_id))
+            connection.execute(
+                "UPDATE tasks SET tokens_used = tokens_used + ?, cost_usd = COALESCE(cost_usd, 0) + ? WHERE id = ?",
+                (tokens, cost_usd or 0, task_id),
+            )
 
     def get_task(self, task_id: str) -> dict | None:
         with self._connect() as connection:

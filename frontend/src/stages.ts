@@ -283,12 +283,16 @@ export function formatSeconds(seconds: number): string {
   return `${Math.floor(whole / 60)} min ${String(whole % 60).padStart(2, "0")} s`;
 }
 
-export function modelUse(events: TaskEvent[]): { calls: number; tokens: number; models: string[] } {
+export function modelUse(events: TaskEvent[]): { calls: number; tokens: number; models: string[]; cost: number | null } {
   const calls = events.filter((e) => e.type === "llm_call");
   return {
     calls: calls.length,
     tokens: calls.reduce((sum, e) => sum + Number(e.data?.prompt_tokens ?? 0) + Number(e.data?.completion_tokens ?? 0), 0),
     models: [...new Set(calls.map((e) => String(e.data?.model ?? "")).filter(Boolean))],
+    // Runs from before cost tracking have no figure, so the total is unknown, not zero.
+    cost: calls.length && calls.every((e) => typeof e.data?.cost_usd === "number")
+      ? calls.reduce((sum, e) => sum + Number(e.data?.cost_usd), 0)
+      : null,
   };
 }
 

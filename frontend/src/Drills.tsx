@@ -106,7 +106,7 @@ export function Drills() {
     <main className="drill-page">
       <section className="drill-head">
         <div>
-          <h1>Try to break out of the sandbox</h1>
+          <h1>Security: try to break out of the sandbox</h1>
           <p>Each attack is real code, run in a fresh sandbox as if the AI had written it. The results are measured from outside, on the host, so the attack can’t lie about them.</p>
         </div>
         <div className="drill-actions">

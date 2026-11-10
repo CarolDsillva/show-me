@@ -14,6 +14,7 @@ import {
   type Task,
   type TaskEvent,
 } from "./stages";
+import { money } from "./Results";
 
 // Ticket, page and model text is untrusted. It is only ever rendered as React text nodes.
 
@@ -126,12 +127,12 @@ export function Run({ taskId, onNew }: { taskId: string; onNew: () => void }) {
         </section>
       )}
 
+      <ol className="stages" aria-label="Progress">
+        {stages.map((stage) => <StageRow key={stage.id} stage={stage} />)}
+      </ol>
+
       <div className="case">
         <aside className="rail">
-          <h2 className="rail-title">Progress</h2>
-          <ol className="stages">
-            {stages.map((stage) => <StageRow key={stage.id} stage={stage} />)}
-          </ol>
           <Proof events={events} taskId={taskId} recorded={recorded} />
         </aside>
 
@@ -237,7 +238,7 @@ function Proof({ events, taskId, recorded }: { events: TaskEvent[]; taskId: stri
   if (!facts) return null;
   return (
     <section className="proof">
-      <h2 className="rail-title">Read back from Docker</h2>
+      <h2 className="rail-title">Sandbox, read back from Docker</h2>
       <dl>
         <div><dt>Runtime</dt><dd>{facts.runtime === "runsc" ? "gVisor" : String(facts.runtime)}</dd></div>
         <div><dt>Network</dt><dd>{facts.network_mode === "none" ? "None" : String(facts.network_mode)}</dd></div>
@@ -253,7 +254,9 @@ function Proof({ events, taskId, recorded }: { events: TaskEvent[]; taskId: stri
             <div><dt>Model</dt><dd>{use.models.join(", ")}</dd></div>
             <div><dt>Calls</dt><dd>{use.calls}</dd></div>
             <div><dt>Tokens</dt><dd>{use.tokens.toLocaleString("en")}</dd></div>
+            <div><dt>Model cost</dt><dd>{use.cost === null ? "Not recorded" : money(use.cost)}</dd></div>
           </dl>
+          {use.cost !== null && <p className="cost-note">At Vultr’s listed rates. Leaves out any subscription fee and the server.</p>}
         </>
       )}
       <a href={`?verify=${taskId}`}>Check the signed evidence</a>

@@ -192,4 +192,6 @@ components:
         pull_request_url: { type: [string, "null"] }
         diff: { type: [string, "null"], description: Untrusted text }
         explanation: { type: [string, "null"], description: Model-written and untrusted. Never decides the outcome }
+        tokens_used: { type: integer }
+        cost_usd: { type: [number, "null"], description: Model usage at Vultr's listed rates. Leaves out any subscription fee and the server }
         created_at: { type: string, format: date-time }

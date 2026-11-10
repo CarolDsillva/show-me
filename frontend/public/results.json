@@ -1,0 +1,156 @@
+{
+ "bugs": {
+  "tag-order": {
+   "title": "Tags aren't in alphabetical order",
+   "upstream": "https://github.com/sissbruecker/linkding/pull/819",
+   "runs": [
+    {
+     "task": "eac0c9b8628646b2a73af79ed6afab2d",
+     "outcome": "NO_VERIFIED_FIX",
+     "seconds": 236,
+     "tokens": 89019,
+     "cost_usd": 0.009820699999999998,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/25"
+    },
+    {
+     "task": "b1539811ed3a43f5a1cc606d8485bf5a",
+     "outcome": "NO_VERIFIED_FIX",
+     "seconds": 254,
+     "tokens": 98147,
+     "cost_usd": 0.0111095,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/33"
+    },
+    {
+     "task": "6a531e9d60614a5d9115ae9b28b370ea",
+     "outcome": "NO_VERIFIED_FIX",
+     "seconds": 268,
+     "tokens": 116584,
+     "cost_usd": 0.013523300000000002,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/38"
+    }
+   ]
+  },
+  "logout-tasks-page": {
+   "title": "Tasks page opens after logout",
+   "upstream": "https://github.com/sissbruecker/linkding/commit/62091c4",
+   "runs": [
+    {
+     "task": "fae2cc90e2054a0ba36ea7396ab69eab",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 503,
+     "tokens": 16247,
+     "cost_usd": 0.0017571999999999998,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/26"
+    },
+    {
+     "task": "4933482ade2044aa8c701087ab28a8f2",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 366,
+     "tokens": 23429,
+     "cost_usd": 0.0031345,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/34"
+    },
+    {
+     "task": "91b70fc433f84f73b930c5adae9fbe1b",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 356,
+     "tokens": 15933,
+     "cost_usd": 0.0016958,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/39"
+    }
+   ]
+  },
+  "tag-count-link": {
+   "title": "Tag count link goes nowhere",
+   "upstream": "https://github.com/sissbruecker/linkding/pull/1452",
+   "runs": [
+    {
+     "task": "68ea4e85e26145c3a3f89d245d118aac",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 346,
+     "tokens": 24102,
+     "cost_usd": 0.0025824,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/27"
+    },
+    {
+     "task": "4e2e62283f17470fa31da073321788f0",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 378,
+     "tokens": 40875,
+     "cost_usd": 0.004576299999999999,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/30"
+    },
+    {
+     "task": "ada4a03aa7124880895f3289b980502e",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 366,
+     "tokens": 31967,
+     "cost_usd": 0.0035098,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/35"
+    }
+   ]
+  },
+  "tag-search-url": {
+   "title": "Tag search can't be shared",
+   "upstream": "https://github.com/sissbruecker/linkding/commit/f67c460",
+   "runs": [
+    {
+     "task": "53d039c6883c4c6782c8f2c9698e9d3c",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 393,
+     "tokens": 54690,
+     "cost_usd": 0.010866,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/28"
+    },
+    {
+     "task": "089cddbbb907499394a069438fb17277",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 377,
+     "tokens": 34330,
+     "cost_usd": 0.004153700000000001,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/31"
+    },
+    {
+     "task": "c98d41f076074127b8eb2fa00158d7ba",
+     "outcome": "FIX_VERIFIED",
+     "seconds": 363,
+     "tokens": 33584,
+     "cost_usd": 0.0038477,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/36"
+    }
+   ]
+  },
+  "notes-link-http": {
+   "title": "Links in notes use insecure http",
+   "upstream": "https://github.com/sissbruecker/linkding/pull/1225",
+   "runs": [
+    {
+     "task": "5b23d9637d444f83a87d095bc4f9e042",
+     "outcome": "NO_VERIFIED_FIX",
+     "seconds": 519,
+     "tokens": 106915,
+     "cost_usd": 0.023532,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/29"
+    },
+    {
+     "task": "c4139fdc929f468bb8d3b347e6cbe196",
+     "outcome": "NO_VERIFIED_FIX",
+     "seconds": 503,
+     "tokens": 87942,
+     "cost_usd": 0.01885545,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/32"
+    },
+    {
+     "task": "9b18601ddcc64bddb3b7e9a9faae8741",
+     "outcome": "NO_VERIFIED_FIX",
+     "seconds": 302,
+     "tokens": 106776,
+     "cost_usd": 0.02958205,
+     "issue": "https://github.com/CarolDsillva/linkding/issues/37"
+    }
+   ]
+  }
+ },
+ "target_commit": "46e02034697046f4b7da5977a03a9de6c48173e8",
+ "updated_at": "2026-11-06T05:44:41.221563+00:00"
+}

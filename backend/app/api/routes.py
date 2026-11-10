@@ -50,7 +50,7 @@ def task_view(task: dict) -> dict:
         "id": task["id"], "kind": task["kind"], "status": task["status"], "outcome": task["outcome"],
         "outcome_rule": task["outcome_rule"], "issue_url": task["issue_url"], "pull_request_url": task["pull_request_url"],
         "diff": task["diff"], "explanation": task["explanation"], "created_at": task["created_at"],
-        "ticket": task["ticket"],
+        "ticket": task["ticket"], "tokens_used": task["tokens_used"], "cost_usd": task["cost_usd"],
     }
 
 
@@ -173,7 +173,10 @@ def signing_key(request: Request) -> dict:
 @router.get("/health")
 def health(request: Request) -> dict:
     settings = request.app.state.settings
-    return {"status": "ok", "commit": settings.commit, "fix_phase_enabled": settings.fix_phase_enabled}
+    return {
+        "status": "ok", "commit": settings.commit, "fix_phase_enabled": settings.fix_phase_enabled,
+        "target_commit": settings.target_commit,
+    }
 
 
 @router.get("/health/host")
