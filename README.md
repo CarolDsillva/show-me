@@ -6,6 +6,17 @@ A customer writes "clicking that number doesn't show my bookmarks". Show Me repr
 
 **Built for** the Vultr Agent Rush hackathon, November 2026.
 
+![Show Me home page: describe a bug the way a customer would, or start from a sample](docs/screenshots/home.png)
+
+| | |
+|---|---|
+| ![A verified run waiting for a developer's decision](docs/screenshots/run-decision.png) | ![The same frozen script before and after the fix](docs/screenshots/run-before-after.png) |
+| **A fix passed, a person decides.** Every stage of the run, the customer's words, and the sandbox limits read back from Docker | **Same script, before and after.** On the current code the bug appears; on the fixed code the same steps work |
+| ![The proposed change with the model's explanation](docs/screenshots/run-proposed-change.png) | ![The frozen script replayed in fresh sandboxes](docs/screenshots/run-frozen-script.png) |
+| **The proposed change.** The diff, with the model's explanation labelled as a claim | **The frozen script.** Hashed before any fix existed, then replayed three times on each version in fresh sandboxes |
+| ![Results on five real past linkding bugs](docs/screenshots/results.png) | ![Seven sandbox escape attempts, all contained](docs/screenshots/security.png) |
+| **Results.** Five real past bugs, three runs each: 15 of 15 reproduced, 9 of 15 ended with a verified fix | **Security.** Seven real attacks run in fresh sandboxes and checked from the host: 7 of 7 contained |
+
 ## Who it's for
 
 Support and engineering teams at software companies. Vague reports bounce between them for days because nobody can reproduce the problem. Coding agents mostly start from a developer's ticket and end with a diff. Show Me starts from a customer's words, and ends with before-and-after proof from a script the patch can't change.
